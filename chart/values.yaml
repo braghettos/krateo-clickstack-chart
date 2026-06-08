@@ -1,0 +1,271 @@
+# =============================================================================
+# Krateo ClickStack wrapper values
+# =============================================================================
+# Top-level knobs exposed to the Krateo Composition. Everything under the
+# `clickstack:` key is passed through to the upstream ClickStack 3.0.0 subchart.
+# -----------------------------------------------------------------------------
+
+# HyperDX / app external exposure. Replaces the obs-stack's imperative
+# `kubectl patch svc krateo-clickstack-app -> LoadBalancer` and the hardcoded
+# GCP static IP (34.59.191.193).
+#
+# - type: how the HyperDX service is exposed. NodePort | LoadBalancer | Ingress.
+#         Maps to clickstack.hyperdx.service.type (ClickStack 3.0.0 DOES expose
+#         hyperdx.service.type, so NO Service patch is needed anymore).
+#         When type=Ingress the service stays ClusterIP and the upstream
+#         hyperdx.ingress is expected to be configured (see clickstack.hyperdx.ingress).
+# - hyperdxHost: external host/IP used to build the app URLs (FRONTEND_URL and
+#         NEXTAUTH_URL). Leave empty to keep upstream defaults (localhost).
+exposure:
+  type: NodePort
+  hyperdxHost: ""
+
+# Namespaces used by the folded-in config objects (ConfigMap + Secrets).
+# These mirror the namespaces the obs-stack applied the raw manifests into.
+namespaces:
+  clickhouse: clickhouse-system
+  krateo: krateo-system
+
+# Default StorageClass for all persistent volumes. ClickStack 3.0.0 does NOT
+# wire global.storageClassName into its templates; storage class lives in each
+# CRD's dataVolumeClaimSpec.storageClassName. We thread it through there below.
+# Set to "" to use the cluster default StorageClass.
+storageClassName: "standard-rwo"
+
+# Surfaced for the Krateo CRD; passed through to clickstack.global.
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+
+# =============================================================================
+# Upstream ClickStack 3.0.0 subchart values (alias: clickstack)
+# =============================================================================
+clickstack:
+  global:
+    # storageClassName kept for documentation parity with the obs-stack values;
+    # NOTE: not consumed by the upstream templates (see top-level storageClassName).
+    storageClassName: "standard-rwo"
+    imageRegistry: ""
+    imagePullSecrets: []
+
+  # ---------------------------------------------------------------------------
+  # ClickHouse
+  # ---------------------------------------------------------------------------
+  # ADAPTATION: ClickStack 3.0.0 deploys ClickHouse via the ClickHouse operator
+  # (ClickHouseCluster + KeeperCluster CRDs), NOT a plain Deployment. So the
+  # obs-stack keys move:
+  #   clickhouse.image            -> clickhouse.cluster.spec.containerTemplate.image.{repository,tag}
+  #   clickhouse.persistence.size -> clickhouse.cluster.spec.dataVolumeClaimSpec.resources.requests.storage
+  #   clickhouse.resources        -> clickhouse.cluster.spec.containerTemplate.resources
+  #   global.storageClassName     -> clickhouse.{cluster,keeper}.spec.dataVolumeClaimSpec.storageClassName
+  # clickhouse.extraVolumes / extraVolumeMounts (http-handlers mount): NO direct
+  #   values equivalent in 3.0.0 (the CRD has no extraVolumes value passthrough).
+  #   The clickhouse-http-handlers ConfigMap is still created (see templates) so
+  #   it is available; mounting it requires the operator's podTemplates/volumes,
+  #   which the chart does not surface. Left as a documented gap.
+  clickhouse:
+    enabled: true
+    port: 8123
+    nativePort: 9000
+    prometheus:
+      enabled: true
+      port: 9363
+    keeper:
+      spec:
+        replicas: 1
+        dataVolumeClaimSpec:
+          accessModes:
+            - ReadWriteOnce
+          storageClassName: "standard-rwo"
+          resources:
+            requests:
+              storage: 5Gi
+    cluster:
+      spec:
+        containerTemplate:
+          # ClickHouse 26.3 LTS (was 26.2): Map column bucketed serialization
+          # (2-49x faster ResourceAttributes lookups), materialized CTEs, text
+          # index + partition-pruning improvements, RBAC fixes.
+          # NOTE: cannot downgrade to 26.2 after upgrade (serialization change).
+          image:
+            repository: clickhouse/clickhouse-server
+            tag: "26.3-alpine"
+          resources:
+            limits:
+              cpu: "4"
+              memory: 8Gi
+            requests:
+              cpu: "1"
+              memory: 2Gi
+        replicas: 1
+        shards: 1
+        keeperClusterRef:
+          name: '{{ include "clickstack.clickhouse.keeper" . }}'
+        dataVolumeClaimSpec:
+          accessModes:
+            - ReadWriteOnce
+          storageClassName: "standard-rwo"
+          resources:
+            requests:
+              storage: 50Gi
+        settings:
+          extraUsersConfig:
+            users:
+              app:
+                password: '{{ .Values.hyperdx.secrets.CLICKHOUSE_APP_PASSWORD }}'
+                profile: default
+                grants:
+                  - query: "GRANT SHOW ON *.*, SELECT ON system.*, SELECT ON default.*"
+              otelcollector:
+                password: '{{ .Values.hyperdx.secrets.CLICKHOUSE_PASSWORD }}'
+                profile: default
+                grants:
+                  - query: "GRANT SELECT,INSERT,CREATE,SHOW ON default.*"
+          extraConfig:
+            max_connections: 4096
+            keep_alive_timeout: 64
+            max_concurrent_queries: 100
+            # http-handlers: injected via the operator's extraConfig passthrough
+            # (merged into /etc/clickhouse-server/config.d/) instead of a ConfigMap
+            # volume mount, which ClickStack 3.0.0's ClickHouseCluster CRD does not
+            # expose. YAML form of obs-stack clickhouse-config/http-handlers.xml.
+            # GET /events?composition_id=<uid> feeds the SSE proxy / composition-events
+            # RESTAction; the static/replicas_status/prometheus/dynamic rules preserve
+            # ClickHouse's built-in endpoints.
+            http_handlers:
+              rule:
+                - url: /events
+                  methods: GET
+                  handler:
+                    type: predefined_query_handler
+                    query: |
+                      SELECT
+                          ifNull(JSONExtractString(Body, 'object', 'involvedObject', 'name'), '')      AS obj_name,
+                          ifNull(JSONExtractString(Body, 'object', 'involvedObject', 'namespace'), '') AS obj_namespace,
+                          ifNull(JSONExtractString(Body, 'object', 'involvedObject', 'uid'), '')       AS obj_uid,
+                          ifNull(JSONExtractString(Body, 'object', 'involvedObject', 'kind'), '')      AS obj_kind,
+                          ifNull(JSONExtractString(Body, 'object', 'reason'), '')                      AS reason,
+                          ifNull(JSONExtractString(Body, 'object', 'message'), '')                     AS message,
+                          ifNull(JSONExtractString(Body, 'object', 'type'), 'Normal')                  AS type,
+                          coalesce(
+                              nullIf(JSONExtractString(Body, 'object', 'eventTime'), ''),
+                              nullIf(JSONExtractString(Body, 'object', 'lastTimestamp'), ''),
+                              formatDateTime(toDateTime(Timestamp), '%Y-%m-%dT%H:%i:%SZ', 'UTC')
+                          )                                                                            AS eventTime,
+                          ifNull(JSONExtractString(Body, 'object', 'source', 'component'), '')         AS source_component
+                      FROM otel_logs
+                      WHERE ResourceAttributes['telemetry.source'] = 'k8s-events'
+                        AND LogAttributes['krateo.io/composition-id'] = {composition_id:String}
+                        AND JSONExtractString(Body, 'object', 'reason') != ''
+                      ORDER BY Timestamp DESC
+                      LIMIT 50
+                      FORMAT JSON
+                - url: /ping
+                  handler:
+                    type: static
+                    status: 200
+                    content_type: "text/plain; charset=UTF-8"
+                    response_content: "Ok.\n"
+                - url: /replicas_status
+                  handler:
+                    type: replicas_status
+                - url: /metrics
+                  handler:
+                    type: prometheus
+                - url: /
+                  methods: "GET,POST"
+                  handler:
+                    type: dynamic_query_handler
+                    query_param_name: query
+
+  # ---------------------------------------------------------------------------
+  # OpenTelemetry Collector Gateway
+  # ---------------------------------------------------------------------------
+  # ADAPTATION (rename): obs-stack used a top-level `otel:` block. In ClickStack
+  # 3.0.0 this is the `otel-collector:` subchart alias (opentelemetry-collector
+  # ~0.146.0). otel.enabled -> otel-collector.enabled, otel.resources ->
+  # otel-collector.resources.
+  otel-collector:
+    enabled: true
+    resources:
+      limits:
+        cpu: "1"
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+
+  # ---------------------------------------------------------------------------
+  # HyperDX UI
+  # ---------------------------------------------------------------------------
+  # ADAPTATION: obs-stack used hyperdx.appUrl (no port) + hyperdx.env NEXTAUTH_URL.
+  # In 3.0.0 there is NO hyperdx.appUrl key. The external URL is driven by:
+  #   FRONTEND_URL -> clickstack.hyperdx.config.FRONTEND_URL
+  #   NEXTAUTH_URL -> clickstack.hyperdx.deployment.env (list entry)
+  # The hardcoded GCP IP (34.59.191.193) is removed; URLs are derived from the
+  # top-level exposure.hyperdxHost by templates/hyperdx-urls helper at the
+  # Composition layer. Defaults below keep upstream localhost behaviour and are
+  # overridden by exposure.hyperdxHost when set (see configmap/secret templates
+  # and README). service.type is wired from exposure.type.
+  hyperdx:
+    service:
+      # Set from top-level exposure.type. NodePort | LoadBalancer | ClusterIP.
+      # (ClusterIP used when exposure.type=Ingress.)
+      type: NodePort
+    ingress:
+      enabled: false
+    config:
+      # Overridden to the external URL when exposure.hyperdxHost is set.
+      FRONTEND_URL: "http://localhost:3000"
+    deployment:
+      env:
+        - name: NEXTAUTH_URL
+          value: "http://localhost:3000"
+
+  # ---------------------------------------------------------------------------
+  # MongoDB (HyperDX persistent state)
+  # ---------------------------------------------------------------------------
+  # ADAPTATION: obs-stack used mongodb.persistence.size. In 3.0.0 mongodb is a
+  # MongoDBCommunity CRD rendered verbatim from mongodb.spec; there is NO
+  # mongodb.persistence key. Persistent volume sizing must be expressed in the
+  # CRD spec (statefulSet volumeClaimTemplates). We pin the version/auth from
+  # upstream and add a statefulSet override for the data volume size + class.
+  mongodb:
+    enabled: true
+    spec:
+      members: 1
+      type: ReplicaSet
+      version: "5.0.32"
+      security:
+        authentication:
+          modes: ["SCRAM"]
+      statefulSet:
+        spec:
+          volumeClaimTemplates:
+            - metadata:
+                name: data-volume
+              spec:
+                accessModes:
+                  - ReadWriteOnce
+                storageClassName: "standard-rwo"
+                resources:
+                  requests:
+                    storage: 10Gi
+      users:
+        - name: hyperdx
+          db: hyperdx
+          passwordSecretRef:
+            name: '{{ include "clickstack.mongodb.fullname" . }}-password'
+          roles:
+            - name: dbOwner
+              db: hyperdx
+            - name: clusterMonitor
+              db: admin
+          scramCredentialsSecretName: '{{ include "clickstack.mongodb.fullname" . }}-scram'
+      additionalMongodConfig:
+        storage.wiredTiger.engineConfig.journalCompressor: zlib
+
+  # ---------------------------------------------------------------------------
+  # Additional manifests (passthrough)
+  # ---------------------------------------------------------------------------
+  additionalManifests: []

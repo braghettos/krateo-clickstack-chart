@@ -1,0 +1,12 @@
+# Registers the clickstack blueprint with Krateo: generates a CRD + controller
+# from the published OCI chart's values.schema.json. Apply this (or let the
+# installer umbrella emit it) before creating a ClickStack Composition.
+apiVersion: core.krateo.io/v1alpha1
+kind: CompositionDefinition
+metadata:
+  name: clickstack
+  namespace: krateo-system
+spec:
+  chart:
+    url: oci://ghcr.io/braghettos/charts/clickstack
+    version: "3.0.0"

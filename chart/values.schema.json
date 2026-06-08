@@ -1,0 +1,170 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Krateo ClickStack wrapper values",
+  "description": "Values for the Krateo ClickStack blueprint wrapper. Top-level knobs are Krateo-facing; everything under `clickstack` is forwarded to the upstream ClickStack 3.0.0 subchart.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["exposure", "namespaces", "clickstack"],
+  "properties": {
+    "exposure": {
+      "type": "object",
+      "title": "HyperDX exposure",
+      "description": "How the HyperDX UI/app service is exposed externally. Replaces the obs-stack LoadBalancer patch and hardcoded GCP IP.",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "title": "Exposure type",
+          "description": "Service exposure mode for HyperDX. Maps to clickstack.hyperdx.service.type (or Ingress when Ingress).",
+          "enum": ["NodePort", "LoadBalancer", "Ingress"],
+          "default": "NodePort"
+        },
+        "hyperdxHost": {
+          "type": "string",
+          "title": "HyperDX host",
+          "description": "External host or IP used to build FRONTEND_URL / NEXTAUTH_URL. Empty keeps upstream localhost defaults.",
+          "default": ""
+        }
+      }
+    },
+    "namespaces": {
+      "type": "object",
+      "title": "Namespaces",
+      "description": "Namespaces for the folded-in ConfigMap and Secrets.",
+      "additionalProperties": false,
+      "properties": {
+        "clickhouse": {
+          "type": "string",
+          "title": "ClickHouse namespace",
+          "default": "clickhouse-system"
+        },
+        "krateo": {
+          "type": "string",
+          "title": "Krateo namespace",
+          "default": "krateo-system"
+        }
+      }
+    },
+    "storageClassName": {
+      "type": "string",
+      "title": "StorageClass name",
+      "description": "Default StorageClass threaded into the ClickHouse/Keeper/MongoDB dataVolumeClaimSpec. Empty uses the cluster default.",
+      "default": "standard-rwo"
+    },
+    "global": {
+      "type": "object",
+      "title": "Global",
+      "description": "Krateo-level global settings, mirrored to clickstack.global.",
+      "additionalProperties": true,
+      "properties": {
+        "imageRegistry": {
+          "type": "string",
+          "title": "Image registry override"
+        },
+        "imagePullSecrets": {
+          "type": "array",
+          "title": "Image pull secrets",
+          "items": { "type": "object", "additionalProperties": true }
+        }
+      }
+    },
+    "clickstack": {
+      "type": "object",
+      "title": "Upstream ClickStack 3.0.0 values",
+      "description": "Values forwarded verbatim to the upstream ClickStack subchart. Mirrors its top-level structure; deep/free-form trees allow additional properties.",
+      "additionalProperties": true,
+      "properties": {
+        "global": {
+          "type": "object",
+          "title": "ClickStack global",
+          "additionalProperties": true,
+          "properties": {
+            "imageRegistry": { "type": "string" },
+            "imagePullSecrets": {
+              "type": "array",
+              "items": { "type": "object", "additionalProperties": true }
+            },
+            "storageClassName": { "type": "string" }
+          }
+        },
+        "hyperdx": {
+          "type": "object",
+          "title": "HyperDX UI",
+          "additionalProperties": true,
+          "properties": {
+            "ports": { "type": "object", "additionalProperties": true },
+            "config": { "type": "object", "additionalProperties": true },
+            "secrets": {
+              "type": ["object", "null"],
+              "additionalProperties": true
+            },
+            "deployment": { "type": "object", "additionalProperties": true },
+            "service": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "description": "Kubernetes Service type for HyperDX.",
+                  "enum": ["ClusterIP", "NodePort", "LoadBalancer"]
+                },
+                "annotations": { "type": "object", "additionalProperties": true },
+                "apiPort": { "type": "object", "additionalProperties": true }
+              }
+            },
+            "ingress": { "type": "object", "additionalProperties": true },
+            "podDisruptionBudget": { "type": "object", "additionalProperties": true },
+            "autoscaling": { "type": "object", "additionalProperties": true },
+            "networkPolicy": { "type": "object", "additionalProperties": true },
+            "serviceAccount": { "type": "object", "additionalProperties": true },
+            "tasks": { "type": "object", "additionalProperties": true }
+          }
+        },
+        "mongodb": {
+          "type": "object",
+          "title": "MongoDB",
+          "additionalProperties": true,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "spec": { "type": "object", "additionalProperties": true }
+          }
+        },
+        "clickhouse": {
+          "type": "object",
+          "title": "ClickHouse",
+          "additionalProperties": true,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "port": { "type": "integer" },
+            "nativePort": { "type": "integer" },
+            "prometheus": { "type": "object", "additionalProperties": true },
+            "keeper": { "type": "object", "additionalProperties": true },
+            "cluster": { "type": "object", "additionalProperties": true }
+          }
+        },
+        "otel-collector": {
+          "type": "object",
+          "title": "OpenTelemetry Collector subchart",
+          "additionalProperties": true,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "mode": { "type": "string" },
+            "image": { "type": "object", "additionalProperties": true },
+            "resources": { "type": "object", "additionalProperties": true },
+            "extraEnvsFrom": {
+              "type": "array",
+              "items": { "type": "object", "additionalProperties": true }
+            },
+            "ports": { "type": "object", "additionalProperties": true }
+          }
+        },
+        "additionalManifests": {
+          "type": "array",
+          "title": "Additional manifests",
+          "items": { "type": "object", "additionalProperties": true }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,6 @@
+# Vendored chart deps and lockfile — never commit these to the fork.
+chart/charts/
+chart/Chart.lock
+dist/
+*.tgz
+.DS_Store
