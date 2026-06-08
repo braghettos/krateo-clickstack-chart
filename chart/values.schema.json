@@ -4,27 +4,35 @@
   "description": "Values for the Krateo ClickStack blueprint wrapper. Top-level knobs are Krateo-facing; everything under `clickstack` is forwarded to the upstream ClickStack 3.0.0 subchart.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["exposure", "namespaces", "clickstack"],
+  "required": [
+    "exposure",
+    "namespaces",
+    "clickstack"
+  ],
   "properties": {
     "exposure": {
       "type": "object",
       "title": "HyperDX exposure",
       "description": "How the HyperDX UI/app service is exposed externally. Replaces the obs-stack LoadBalancer patch and hardcoded GCP IP.",
       "additionalProperties": false,
-      "required": ["type"],
+      "required": [
+        "type"
+      ],
       "properties": {
         "type": {
           "type": "string",
           "title": "Exposure type",
           "description": "Service exposure mode for HyperDX. Maps to clickstack.hyperdx.service.type (or Ingress when Ingress).",
-          "enum": ["NodePort", "LoadBalancer", "Ingress"],
-          "default": "NodePort"
+          "enum": [
+            "NodePort",
+            "LoadBalancer",
+            "Ingress"
+          ]
         },
         "hyperdxHost": {
           "type": "string",
           "title": "HyperDX host",
-          "description": "External host or IP used to build FRONTEND_URL / NEXTAUTH_URL. Empty keeps upstream localhost defaults.",
-          "default": ""
+          "description": "External host or IP used to build FRONTEND_URL / NEXTAUTH_URL. Empty keeps upstream localhost defaults."
         }
       }
     },
@@ -36,21 +44,18 @@
       "properties": {
         "clickhouse": {
           "type": "string",
-          "title": "ClickHouse namespace",
-          "default": "clickhouse-system"
+          "title": "ClickHouse namespace"
         },
         "krateo": {
           "type": "string",
-          "title": "Krateo namespace",
-          "default": "krateo-system"
+          "title": "Krateo namespace"
         }
       }
     },
     "storageClassName": {
       "type": "string",
       "title": "StorageClass name",
-      "description": "Default StorageClass threaded into the ClickHouse/Keeper/MongoDB dataVolumeClaimSpec. Empty uses the cluster default.",
-      "default": "standard-rwo"
+      "description": "Default StorageClass threaded into the ClickHouse/Keeper/MongoDB dataVolumeClaimSpec. Empty uses the cluster default."
     },
     "global": {
       "type": "object",
@@ -65,7 +70,10 @@
         "imagePullSecrets": {
           "type": "array",
           "title": "Image pull secrets",
-          "items": { "type": "object", "additionalProperties": true }
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
         }
       }
     },
@@ -80,12 +88,19 @@
           "title": "ClickStack global",
           "additionalProperties": true,
           "properties": {
-            "imageRegistry": { "type": "string" },
+            "imageRegistry": {
+              "type": "string"
+            },
             "imagePullSecrets": {
               "type": "array",
-              "items": { "type": "object", "additionalProperties": true }
+              "items": {
+                "type": "object",
+                "additionalProperties": true
+              }
             },
-            "storageClassName": { "type": "string" }
+            "storageClassName": {
+              "type": "string"
+            }
           }
         },
         "hyperdx": {
@@ -93,13 +108,25 @@
           "title": "HyperDX UI",
           "additionalProperties": true,
           "properties": {
-            "ports": { "type": "object", "additionalProperties": true },
-            "config": { "type": "object", "additionalProperties": true },
-            "secrets": {
-              "type": ["object", "null"],
+            "ports": {
+              "type": "object",
               "additionalProperties": true
             },
-            "deployment": { "type": "object", "additionalProperties": true },
+            "config": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "secrets": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "additionalProperties": true
+            },
+            "deployment": {
+              "type": "object",
+              "additionalProperties": true
+            },
             "service": {
               "type": "object",
               "additionalProperties": true,
@@ -107,18 +134,46 @@
                 "type": {
                   "type": "string",
                   "description": "Kubernetes Service type for HyperDX.",
-                  "enum": ["ClusterIP", "NodePort", "LoadBalancer"]
+                  "enum": [
+                    "ClusterIP",
+                    "NodePort",
+                    "LoadBalancer"
+                  ]
                 },
-                "annotations": { "type": "object", "additionalProperties": true },
-                "apiPort": { "type": "object", "additionalProperties": true }
+                "annotations": {
+                  "type": "object",
+                  "additionalProperties": true
+                },
+                "apiPort": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
               }
             },
-            "ingress": { "type": "object", "additionalProperties": true },
-            "podDisruptionBudget": { "type": "object", "additionalProperties": true },
-            "autoscaling": { "type": "object", "additionalProperties": true },
-            "networkPolicy": { "type": "object", "additionalProperties": true },
-            "serviceAccount": { "type": "object", "additionalProperties": true },
-            "tasks": { "type": "object", "additionalProperties": true }
+            "ingress": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "podDisruptionBudget": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "autoscaling": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "networkPolicy": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "serviceAccount": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "tasks": {
+              "type": "object",
+              "additionalProperties": true
+            }
           }
         },
         "mongodb": {
@@ -126,8 +181,13 @@
           "title": "MongoDB",
           "additionalProperties": true,
           "properties": {
-            "enabled": { "type": "boolean" },
-            "spec": { "type": "object", "additionalProperties": true }
+            "enabled": {
+              "type": "boolean"
+            },
+            "spec": {
+              "type": "object",
+              "additionalProperties": true
+            }
           }
         },
         "clickhouse": {
@@ -135,12 +195,27 @@
           "title": "ClickHouse",
           "additionalProperties": true,
           "properties": {
-            "enabled": { "type": "boolean" },
-            "port": { "type": "integer" },
-            "nativePort": { "type": "integer" },
-            "prometheus": { "type": "object", "additionalProperties": true },
-            "keeper": { "type": "object", "additionalProperties": true },
-            "cluster": { "type": "object", "additionalProperties": true }
+            "enabled": {
+              "type": "boolean"
+            },
+            "port": {
+              "type": "integer"
+            },
+            "nativePort": {
+              "type": "integer"
+            },
+            "prometheus": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "keeper": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "cluster": {
+              "type": "object",
+              "additionalProperties": true
+            }
           }
         },
         "otel-collector": {
@@ -148,21 +223,40 @@
           "title": "OpenTelemetry Collector subchart",
           "additionalProperties": true,
           "properties": {
-            "enabled": { "type": "boolean" },
-            "mode": { "type": "string" },
-            "image": { "type": "object", "additionalProperties": true },
-            "resources": { "type": "object", "additionalProperties": true },
+            "enabled": {
+              "type": "boolean"
+            },
+            "mode": {
+              "type": "string"
+            },
+            "image": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "resources": {
+              "type": "object",
+              "additionalProperties": true
+            },
             "extraEnvsFrom": {
               "type": "array",
-              "items": { "type": "object", "additionalProperties": true }
+              "items": {
+                "type": "object",
+                "additionalProperties": true
+              }
             },
-            "ports": { "type": "object", "additionalProperties": true }
+            "ports": {
+              "type": "object",
+              "additionalProperties": true
+            }
           }
         },
         "additionalManifests": {
           "type": "array",
           "title": "Additional manifests",
-          "items": { "type": "object", "additionalProperties": true }
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
         }
       }
     }
