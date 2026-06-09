@@ -1,5 +1,60 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema",
   "type": "object",
-  "title": "ClickStack"
+  "title": "ClickStack",
+  "additionalProperties": false,
+  "properties": {
+    "clickstack": {
+      "type": "object",
+      "title": "Upstream ClickStack pass-through",
+      "description": "Values forwarded verbatim to the upstream ClickStack 3.0.0 subchart (ClickHouse/Keeper/OTel/HyperDX/MongoDB). Free-form; validated by the upstream chart.",
+      "x-kubernetes-preserve-unknown-fields": true,
+      "additionalProperties": true
+    },
+    "exposure": {
+      "type": "object",
+      "title": "HyperDX/app external exposure",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "NodePort",
+            "LoadBalancer",
+            "Ingress"
+          ],
+          "description": "How the HyperDX service is exposed (maps to clickstack.hyperdx.service.type)."
+        },
+        "hyperdxHost": {
+          "type": "string",
+          "description": "External host/IP used to build HyperDX app URLs (FRONTEND_URL/NEXTAUTH_URL). Empty keeps upstream defaults."
+        }
+      }
+    },
+    "namespaces": {
+      "type": "object",
+      "title": "Namespaces for folded-in config objects",
+      "additionalProperties": false,
+      "properties": {
+        "clickhouse": {
+          "type": "string",
+          "description": "Namespace for ClickHouse/Keeper/MongoDB/OTel objects."
+        },
+        "krateo": {
+          "type": "string",
+          "description": "Krateo namespace (consumers of the credentials/endpoint secrets)."
+        }
+      }
+    },
+    "storageClassName": {
+      "type": "string",
+      "title": "Default StorageClass",
+      "description": "StorageClass threaded into each CRD's dataVolumeClaimSpec.storageClassName. Empty uses the cluster default."
+    },
+    "global": {
+      "type": "object",
+      "description": "Krateo-injected global values (compositionId/apiVersion/group).",
+      "additionalProperties": true
+    }
+  }
 }
