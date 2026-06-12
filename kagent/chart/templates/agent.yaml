@@ -14,7 +14,7 @@ spec:
     deployment:
       env:
 {{- include "krateo-clickstack-agent.genaiEnv" . | nindent 8 }}
-    modelConfig: {{ .Values.modelConfig }}
+    modelConfig: {{ .Values.modelConfig.name }}
     stream: true
     promptTemplate:
       dataSources:

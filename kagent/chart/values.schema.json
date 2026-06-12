@@ -4,12 +4,89 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
-    "namespace": { "type": "string" },
-    "modelConfig": { "type": "string" },
-    "prompts": { "type": "object", "additionalProperties": false, "properties": { "language": { "type": "string" } } },
-    "vertexAI": { "type": "object", "additionalProperties": false, "properties": { "enabled": {"type":"boolean"}, "projectID": {"type":"string"}, "location": {"type":"string"} } },
-    "github": { "type": "object", "additionalProperties": false, "properties": { "enabled": {"type":"boolean"}, "mcpServer": {"type":"string"} } },
-    "resources": { "type": "object", "additionalProperties": true },
-    "global": { "type": "object", "additionalProperties": true }
+    "namespace": {
+      "type": "string"
+    },
+    "modelConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "ModelConfig the agent uses \u2014 referenced by name, or created here (create=true) so this agent's model/provider is configured independently.",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "create": {
+          "type": "boolean"
+        },
+        "provider": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        },
+        "vertexAI": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "projectID": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string"
+            }
+          }
+        },
+        "apiKeySecret": {
+          "type": "string"
+        },
+        "apiKeySecretKey": {
+          "type": "string"
+        }
+      }
+    },
+    "prompts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "language": {
+          "type": "string"
+        }
+      }
+    },
+    "vertexAI": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "projectID": {
+          "type": "string"
+        },
+        "location": {
+          "type": "string"
+        }
+      }
+    },
+    "github": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "mcpServer": {
+          "type": "string"
+        }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "global": {
+      "type": "object",
+      "additionalProperties": true
+    }
   }
 }
