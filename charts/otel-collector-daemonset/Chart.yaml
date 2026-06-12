@@ -11,3 +11,12 @@ dependencies:
   - name: opentelemetry-collector
     version: 0.158.1
     repository: https://open-telemetry.github.io/opentelemetry-helm-charts
+home: https://krateo.io
+icon: https://github.com/krateoplatformops/krateo/blob/main/docs/media/logo.svg
+keywords:
+  - krateo
+  - platformops
+  - opentelemetry
+  - observability
+sources:
+  - https://github.com/braghettos/krateo-clickstack-chart
