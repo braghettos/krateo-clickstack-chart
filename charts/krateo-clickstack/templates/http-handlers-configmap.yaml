@@ -1,0 +1,18 @@
+{{- if .Values.httpHandlers.enabled }}
+{{- /*
+  ClickHouse HTTP handlers config. Mounted into /etc/clickhouse-server/config.d/
+  by clickstack.clickhouse.extraVolumes (see values.yaml). Registers the
+  GET /events?composition_id=<uid> predefined_query_handler used by the portal
+  events bell. Lands in this release's namespace (krateo-system).
+*/}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clickhouse-http-handlers
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: krateo-observability-stack
+data:
+  http-handlers.xml: |-
+{{ .Files.Get "files/http-handlers.xml" | indent 4 }}
+{{- end }}

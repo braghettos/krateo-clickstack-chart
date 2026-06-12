@@ -1,0 +1,71 @@
+<clickhouse>
+  <http_handlers>
+    <!--
+      GET /events?composition_id=<uid>[&limit=50]
+
+      The compositionresolver OTel processor enriches each K8s event with
+      LogAttributes['krateo.io/composition-id'] by resolving the involvedObject
+      via the K8s API.  composition_id is the composition resource's UID.
+    -->
+    <rule>
+      <url>/events</url>
+      <methods>GET</methods>
+      <handler>
+        <type>predefined_query_handler</type>
+        <query>
+          SELECT
+              ifNull(JSONExtractString(Body, 'object', 'involvedObject', 'name'), '')      AS obj_name,
+              ifNull(JSONExtractString(Body, 'object', 'involvedObject', 'namespace'), '') AS obj_namespace,
+              ifNull(JSONExtractString(Body, 'object', 'involvedObject', 'uid'), '')       AS obj_uid,
+              ifNull(JSONExtractString(Body, 'object', 'involvedObject', 'kind'), '')      AS obj_kind,
+              ifNull(JSONExtractString(Body, 'object', 'reason'), '')                      AS reason,
+              ifNull(JSONExtractString(Body, 'object', 'message'), '')                     AS message,
+              ifNull(JSONExtractString(Body, 'object', 'type'), 'Normal')                  AS type,
+              coalesce(
+                  nullIf(JSONExtractString(Body, 'object', 'eventTime'), ''),
+                  nullIf(JSONExtractString(Body, 'object', 'lastTimestamp'), ''),
+                  formatDateTime(toDateTime(Timestamp), '%Y-%m-%dT%H:%i:%SZ', 'UTC')
+              )                                                                             AS eventTime,
+              ifNull(JSONExtractString(Body, 'object', 'source', 'component'), '')         AS source_component
+          FROM otel_logs
+          WHERE ResourceAttributes['telemetry.source'] = 'k8s-events'
+            AND LogAttributes['krateo.io/composition-id'] = {composition_id:String}
+            AND JSONExtractString(Body, 'object', 'reason') != ''
+          ORDER BY Timestamp DESC
+          LIMIT 50
+          FORMAT JSON
+        </query>
+      </handler>
+    </rule>
+    <rule>
+      <url>/ping</url>
+      <handler>
+        <type>static</type>
+        <status>200</status>
+        <content_type>text/plain; charset=UTF-8</content_type>
+        <response_content>Ok.
+</response_content>
+      </handler>
+    </rule>
+    <rule>
+      <url>/replicas_status</url>
+      <handler>
+        <type>replicas_status</type>
+      </handler>
+    </rule>
+    <rule>
+      <url>/metrics</url>
+      <handler>
+        <type>prometheus</type>
+      </handler>
+    </rule>
+    <rule>
+      <url>/</url>
+      <methods>GET,POST</methods>
+      <handler>
+        <type>dynamic_query_handler</type>
+        <query_param_name>query</query_param_name>
+      </handler>
+    </rule>
+  </http_handlers>
+</clickhouse>

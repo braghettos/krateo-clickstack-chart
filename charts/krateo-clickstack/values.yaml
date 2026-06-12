@@ -1,0 +1,94 @@
+# krateo-clickstack — ClickStack for Krateo observability, as a composition.
+#
+# The heavy upstream `clickstack` values live under the `clickstack:` key and are
+# passed through verbatim. Helm's top-level `global` propagates into clickstack and
+# all of its subcharts (clickhouse / otel / hyperdx / mongodb).
+
+# storageClassName overrides the chart default (local-path) for GKE.
+global:
+  storageClassName: "standard-rwo"
+
+# ---------------------------------------------------------------------------
+# Krateo additions (rendered by this chart's own templates)
+# ---------------------------------------------------------------------------
+# ClickHouse HTTP-handlers ConfigMap (clickhouse-http-handlers). Mounted by the
+# ClickHouse pods via clickstack.clickhouse.extraVolumes below. Exposes
+# GET /events?composition_id=<uid> for the portal events bell.
+httpHandlers:
+  enabled: true
+
+# Credentials Secret for the OTel collectors (otel-clickhouse-credentials).
+# Created in THIS release's namespace (krateo-system) — the same namespace the
+# collector pods run in, so no cross-namespace replication is needed.
+# username/password must match the ClickStack ClickHouse `otelcollector` user
+# (clickstack provisions it via extraUsersConfig with this same password).
+otelCredentials:
+  enabled: true
+  secretName: otel-clickhouse-credentials
+  username: otelcollector
+  password: otelcollectorpass
+
+# HyperDX external access. The upstream chart only emits a ClusterIP Service
+# (krateo-clickstack-app); this renders an ADDITIONAL LoadBalancer Service so the
+# UI is reachable without an imperative `kubectl patch` (no hardcoded IP — the
+# cloud assigns one).
+hyperdxLoadBalancer:
+  enabled: true
+  name: krateo-clickstack-app-lb
+  port: 3000
+
+# ---------------------------------------------------------------------------
+# Upstream clickstack passthrough (verbatim from obs-stack/clickstack/values.yaml)
+# ---------------------------------------------------------------------------
+clickstack:
+  # Stable resource names regardless of the Helm release name. Krateo's core-provider
+  # installs a composition's release as "<composition-name>-<random>", so without this
+  # the ClickHouse/Keeper/Mongo Services would be named after that random release name
+  # and the otel-collector / mcp / sse-proxy references (which expect
+  # krateo-clickstack-clickhouse-clickhouse-headless) would not resolve.
+  fullnameOverride: krateo-clickstack
+
+  clickhouse:
+    enabled: true
+    # ClickHouse 26.3 LTS (Map bucketed serialization, materialized CTEs, RBAC fixes).
+    image: "clickhouse/clickhouse-server:26.3-alpine"
+    persistence:
+      enabled: true
+      size: 50Gi
+    resources:
+      limits:
+        cpu: "4"
+        memory: 8Gi
+      requests:
+        cpu: "1"
+        memory: 2Gi
+    # Mount the clickhouse-http-handlers ConfigMap (rendered by this chart) into
+    # /etc/clickhouse-server/config.d/ so the /events handler is registered.
+    extraVolumes:
+      - name: http-handlers-config
+        configMap:
+          name: clickhouse-http-handlers
+    extraVolumeMounts:
+      - name: http-handlers-config
+        mountPath: /etc/clickhouse-server/config.d/http-handlers.xml
+        subPath: http-handlers.xml
+
+  otel:
+    enabled: true
+    resources:
+      limits:
+        cpu: "1"
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+
+  hyperdx:
+    enabled: true
+    ingress:
+      enabled: false
+
+  mongodb:
+    enabled: true
+    persistence:
+      size: 10Gi

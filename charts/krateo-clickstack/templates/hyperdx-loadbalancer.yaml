@@ -1,0 +1,27 @@
+{{- if .Values.hyperdxLoadBalancer.enabled }}
+{{- /*
+  Additional LoadBalancer Service for the HyperDX UI. The upstream clickstack
+  chart only emits a ClusterIP Service (krateo-clickstack-app); this exposes the
+  same pods externally without an imperative `kubectl patch`. The cloud assigns
+  the external IP (no hardcoded loadBalancerIP — that was install.sh phase 2b).
+  Selector mirrors the upstream krateo-clickstack-app Service.
+*/}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.hyperdxLoadBalancer.name }}
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: krateo-observability-stack
+    app.kubernetes.io/component: hyperdx
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/name: clickstack
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - name: app
+      port: {{ .Values.hyperdxLoadBalancer.port }}
+      targetPort: 3000
+      protocol: TCP
+{{- end }}
