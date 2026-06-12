@@ -1,6 +1,7 @@
-# Canonical Krateo chart-repo lint workflow. PR-time validation for every chart:
-# helm lint, values.schema.json well-formedness, and a render smoke test. Same file
-# across all krateo-*-chart repos (charts live under charts/*, or a single chart/).
+# Canonical Krateo chart-repo lint workflow. PR-time validation for every chart in
+# the repo — helm lint, values.schema.json well-formedness, and a render smoke test.
+# Shape-agnostic: discovers chart/, crd-chart/ and charts/* (vendored dependency
+# charts sit deeper and are skipped). Identical across all krateo-* chart repos.
 name: lint
 
 on:
@@ -23,30 +24,19 @@ jobs:
         with:
           version: v3.19.0
 
-      - name: Discover chart directories
-        id: charts
-        run: |
-          set -euo pipefail
-          if [ -d charts ]; then
-            dirs=$(find charts -maxdepth 2 -name Chart.yaml -printf '%h\n')
-          else
-            dirs=chart
-          fi
-          echo "dirs<<EOF" >> "$GITHUB_OUTPUT"
-          echo "${dirs}" >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
-
       - name: Lint, validate schema, render
         run: |
           set -euo pipefail
+          # All first-class charts (chart/, crd-chart/, charts/*). Vendored dependency
+          # charts live at depth >=4 (e.g. charts/x/charts/dep), so -maxdepth 3 excludes them.
+          mapfile -t dirs < <(find . -maxdepth 3 -name Chart.yaml -printf '%h\n' | sort -u)
           fail=0
-          while IFS= read -r dir; do
-            [ -z "$dir" ] && continue
+          for dir in "${dirs[@]}"; do
             echo "::group::${dir}"
             # Placeholder versions used by the release workflow must not break lint.
             sed -i 's/CHART_VERSION/0.0.0/g; s/APP_VERSION/0.0.0/g' "${dir}/Chart.yaml"
             if [ -f "${dir}/values.schema.json" ]; then
-              python3 -c "import json,sys; json.load(open('${dir}/values.schema.json'))" \
+              python3 -c "import json; json.load(open('${dir}/values.schema.json'))" \
                 && echo "values.schema.json: valid JSON" || { echo "values.schema.json: INVALID"; fail=1; }
             fi
             if grep -q '^dependencies:' "${dir}/Chart.yaml"; then
@@ -55,5 +45,5 @@ jobs:
             helm lint "${dir}" || fail=1
             helm template smoke "${dir}" >/dev/null || fail=1
             echo "::endgroup::"
-          done <<< "${{ steps.charts.outputs.dirs }}"
+          done
           exit $fail
