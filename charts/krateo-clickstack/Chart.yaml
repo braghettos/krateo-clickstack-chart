@@ -1,0 +1,24 @@
+apiVersion: v2
+name: krateo-clickstack
+description: >-
+  ClickStack (ClickHouse + OTel gateway + HyperDX + MongoDB) for the Krateo
+  observability stack, packaged as a Krateo composition. Wraps the upstream
+  clickstack chart and folds in the ClickHouse HTTP-handlers ConfigMap, the
+  otel-clickhouse credentials Secret, and a HyperDX LoadBalancer Service.
+  Replaces obs-stack install.sh phases 1, 2, 2b and 2c (no imperative kubectl).
+type: application
+version: 0.1.2
+appVersion: "3.0.0"
+dependencies:
+  - name: clickstack
+    version: "3.0.0"
+    repository: https://clickhouse.github.io/ClickStack-helm-charts
+home: https://krateo.io
+icon: https://github.com/krateoplatformops/krateo/blob/main/docs/media/logo.svg
+keywords:
+  - krateo
+  - platformops
+  - clickstack
+  - observability
+sources:
+  - https://github.com/braghettos/krateo-clickstack-chart

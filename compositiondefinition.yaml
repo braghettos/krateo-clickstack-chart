@@ -4,9 +4,9 @@
 apiVersion: core.krateo.io/v1alpha1
 kind: CompositionDefinition
 metadata:
-  name: clickstack
+  name: krateo-clickstack
   namespace: krateo-system
 spec:
   chart:
-    url: oci://ghcr.io/braghettos/charts/clickstack
-    version: "3.0.0"
+    url: oci://ghcr.io/braghettos/krateo/krateo-clickstack
+    version: "0.1.2"

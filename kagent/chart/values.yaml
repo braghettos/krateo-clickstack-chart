@@ -1,0 +1,30 @@
+namespace: krateo-system
+# ModelConfig for this agent. By default it REFERENCES a ModelConfig by name (e.g. one the
+# autopilot ships: gemini-flash / gemini-pro). Set create=true to provision a DEDICATED ModelConfig
+# for THIS agent, so it can use a different model/provider independently of the other agents.
+modelConfig:
+  name: gemini-flash
+  create: false
+  provider: GeminiVertexAI          # GeminiVertexAI (ADC) | Gemini (API key) | Anthropic | OpenAI
+  model: gemini-2.5-flash
+  vertexAI:                         # used when provider == GeminiVertexAI
+    projectID: ""
+    location: us-central1
+  apiKeySecret: ""                  # used when the provider needs a key (Gemini/Anthropic/OpenAI)
+  apiKeySecretKey: ""
+prompts:
+  language: eng
+vertexAI:
+  enabled: true
+  projectID: ""
+  location: us-central1
+github:
+  enabled: true
+  mcpServer: github-mcp-server
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
