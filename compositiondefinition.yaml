@@ -8,5 +8,5 @@ metadata:
   namespace: krateo-system
 spec:
   chart:
-    url: oci://ghcr.io/braghettos/charts/clickstack
+    url: oci://ghcr.io/braghettos/krateo/clickstack
     version: "3.0.0"

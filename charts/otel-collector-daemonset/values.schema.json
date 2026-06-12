@@ -1,0 +1,532 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "otel-collector-daemonset values",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "global": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Global values shared across charts."
+    },
+    "opentelemetry-collector": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "deployment",
+            "daemonset",
+            "statefulset"
+          ]
+        },
+        "image": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "repository": {
+              "type": "string"
+            }
+          }
+        },
+        "command": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "name": {
+              "type": "string"
+            }
+          }
+        },
+        "clusterRole": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "create": {
+              "type": "boolean"
+            },
+            "rules": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": true,
+                "properties": {
+                  "apiGroups": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "resources": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "verbs": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "presets": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "logsCollection": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "includeCollectorLogs": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "hostMetrics": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "kubernetesAttributes": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "extractAllPodLabels": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "kubeletMetrics": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "config": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "receivers": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "filelog": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "operators": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true,
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "max_log_size": {
+                            "type": "integer"
+                          },
+                          "type": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "hostmetrics": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "collection_interval": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "kubeletstats": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "collection_interval": {
+                      "type": "string"
+                    },
+                    "auth_type": {
+                      "type": "string"
+                    },
+                    "endpoint": {
+                      "type": "string"
+                    },
+                    "insecure_skip_verify": {
+                      "type": "boolean"
+                    },
+                    "metrics": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "properties": {
+                        "k8s.pod.cpu_limit_utilization": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "properties": {
+                            "enabled": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        "k8s.pod.cpu_request_utilization": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "properties": {
+                            "enabled": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        "k8s.pod.memory_limit_utilization": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "properties": {
+                            "enabled": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        "k8s.pod.memory_request_utilization": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "properties": {
+                            "enabled": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        "k8s.pod.uptime": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "properties": {
+                            "enabled": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        "k8s.node.uptime": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "properties": {
+                            "enabled": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        "k8s.container.cpu_limit_utilization": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "properties": {
+                            "enabled": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        "k8s.container.cpu_request_utilization": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "properties": {
+                            "enabled": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        "k8s.container.memory_limit_utilization": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "properties": {
+                            "enabled": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        "k8s.container.memory_request_utilization": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "properties": {
+                            "enabled": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        "container.uptime": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "properties": {
+                            "enabled": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "processors": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "transform": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "log_statements": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true,
+                        "properties": {
+                          "context": {
+                            "type": "string"
+                          },
+                          "statements": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "batch": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "send_batch_size": {
+                      "type": "integer"
+                    },
+                    "timeout": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "memory_limiter": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "check_interval": {
+                      "type": "string"
+                    },
+                    "limit_percentage": {
+                      "type": "integer"
+                    },
+                    "spike_limit_percentage": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            },
+            "exporters": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "clickhouse": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "endpoint": {
+                      "type": "string"
+                    },
+                    "username": {
+                      "type": "string"
+                    },
+                    "password": {
+                      "type": "string"
+                    },
+                    "database": {
+                      "type": "string"
+                    },
+                    "logs_table_name": {
+                      "type": "string"
+                    },
+                    "traces_table_name": {
+                      "type": "string"
+                    },
+                    "metrics_table_name": {
+                      "type": "string"
+                    },
+                    "create_schema": {
+                      "type": "boolean"
+                    },
+                    "timeout": {
+                      "type": "string"
+                    },
+                    "retry_on_failure": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean"
+                        },
+                        "initial_interval": {
+                          "type": "string"
+                        },
+                        "max_interval": {
+                          "type": "string"
+                        },
+                        "max_elapsed_time": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "service": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "pipelines": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "logs": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "properties": {
+                        "receivers": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "processors": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "exporters": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "metrics": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "properties": {
+                        "receivers": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "processors": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "exporters": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "extraEnvs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "valueFrom": {
+                "type": "object",
+                "additionalProperties": true,
+                "properties": {
+                  "secretKeyRef": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "key": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "resources": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "limits": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "cpu": {
+                  "type": "string"
+                },
+                "memory": {
+                  "type": "string"
+                }
+              }
+            },
+            "requests": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "cpu": {
+                  "type": "string"
+                },
+                "memory": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "Values forwarded to the upstream opentelemetry-collector subchart."
+    }
+  }
+}

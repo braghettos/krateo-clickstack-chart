@@ -1,0 +1,140 @@
+global: {}
+
+opentelemetry-collector:
+  mode: daemonset
+
+  image:
+    repository: otel/opentelemetry-collector-contrib
+
+  command:
+    name: otelcol-contrib
+
+  clusterRole:
+    create: true
+    rules:
+      - apiGroups: [""]
+        resources: [nodes/proxy, pods]
+        verbs: [get, list, watch]
+
+  presets:
+    logsCollection:
+      enabled: true
+      includeCollectorLogs: false
+    hostMetrics:
+      enabled: true
+    kubernetesAttributes:
+      enabled: true
+      extractAllPodLabels: true
+    kubeletMetrics:
+      enabled: true
+
+  config:
+    receivers:
+      filelog:
+        operators:
+          - id: container-parser
+            max_log_size: 102400
+            type: container
+          - id: recombine-multiline
+            type: recombine
+            combine_field: body
+            combine_with: "\n"
+            is_first_entry: 'body not matches "^  " and body not matches "^}"'
+            source_identifier: attributes["log.file.path"]
+            max_unmatched_batch_size: 100
+            overwrite_with: oldest
+
+      hostmetrics:
+        collection_interval: 60s
+
+      kubeletstats:
+        collection_interval: 60s
+        auth_type: serviceAccount
+        endpoint: "${env:K8S_NODE_NAME}:10250"
+        insecure_skip_verify: true
+        metrics:
+          k8s.pod.cpu_limit_utilization:
+            enabled: true
+          k8s.pod.cpu_request_utilization:
+            enabled: true
+          k8s.pod.memory_limit_utilization:
+            enabled: true
+          k8s.pod.memory_request_utilization:
+            enabled: true
+          k8s.pod.uptime:
+            enabled: true
+          k8s.node.uptime:
+            enabled: true
+          k8s.container.cpu_limit_utilization:
+            enabled: true
+          k8s.container.cpu_request_utilization:
+            enabled: true
+          k8s.container.memory_limit_utilization:
+            enabled: true
+          k8s.container.memory_request_utilization:
+            enabled: true
+          container.uptime:
+            enabled: true
+
+    processors:
+      transform:
+        log_statements:
+          - context: log
+            statements:
+              - 'replace_pattern(body, "\\x1b\\[[0-9;]*[mGKHFABCDsu]", "")'
+              - 'set(attributes["krateo.io/composition-id"], resource.attributes["k8s.pod.labels.krateo.io/composition-id"]) where resource.attributes["k8s.pod.labels.krateo.io/composition-id"] != nil'
+      batch:
+        send_batch_size: 10000
+        timeout: 5s
+      memory_limiter:
+        check_interval: 5s
+        limit_percentage: 80
+        spike_limit_percentage: 25
+
+    exporters:
+      clickhouse:
+        endpoint: "tcp://krateo-clickstack-clickhouse-clickhouse-headless.krateo-system.svc:9000"
+        username: "${env:CH_USERNAME}"
+        password: "${env:CH_PASSWORD}"
+        database: default
+        logs_table_name: otel_logs
+        traces_table_name: otel_traces
+        metrics_table_name: otel_metrics
+        create_schema: false
+        timeout: 10s
+        retry_on_failure:
+          enabled: true
+          initial_interval: 5s
+          max_interval: 30s
+          max_elapsed_time: 300s
+
+    service:
+      pipelines:
+        logs:
+          receivers: [filelog]
+          processors: [memory_limiter, k8sattributes, transform, batch]
+          exporters: [clickhouse]
+        metrics:
+          receivers: [hostmetrics, kubeletstats]
+          processors: [memory_limiter, k8sattributes, batch]
+          exporters: [clickhouse]
+
+  extraEnvs:
+    - name: CH_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: otel-clickhouse-credentials
+          key: username
+    - name: CH_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: otel-clickhouse-credentials
+          key: password
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
