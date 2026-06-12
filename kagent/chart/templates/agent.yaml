@@ -1,0 +1,66 @@
+apiVersion: kagent.dev/v1alpha2
+kind: Agent
+metadata:
+  name: krateo-clickstack-agent
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: krateo-clickstack-agent
+    app.kubernetes.io/part-of: krateo-clickstack
+spec:
+  type: Declarative
+  description: >-
+    The Krateo observability expert: troubleshoots Krateo/K8s issues by querying the ClickStack telemetry backend (ClickHouse+OTel+HyperDX). Knows braghettos/krateo-clickstack-chart.
+  declarative:
+    deployment:
+      env:
+{{- include "krateo-clickstack-agent.genaiEnv" . | nindent 8 }}
+    modelConfig: {{ .Values.modelConfig }}
+    stream: true
+    promptTemplate:
+      dataSources:
+        - kind: ConfigMap
+          name: krateo-clickstack-agent-prompts-{{ .Values.prompts.language }}
+          alias: prompts
+    systemMessage: |
+      {{`{{include "prompts/clickstack_agent"}}`}}
+    tools:
+      - type: McpServer
+        mcpServer:
+          name: clickhouse-mcp-server
+          kind: RemoteMCPServer
+          apiGroup: kagent.dev
+          toolNames:
+            - list_databases
+            - list_tables
+            - run_select_query
+      - type: McpServer
+        mcpServer:
+          name: kagent-tool-server
+          kind: RemoteMCPServer
+          apiGroup: kagent.dev
+          toolNames:
+            - k8s_get_resources
+            - k8s_get_pod_logs
+            - k8s_get_events
+{{- if .Values.github.enabled }}
+      - type: McpServer
+        mcpServer:
+          name: {{ .Values.github.mcpServer }}
+          kind: RemoteMCPServer
+          apiGroup: kagent.dev
+          toolNames:
+            - get_file_contents
+            - search_code
+{{- end }}
+    a2aConfig:
+      skills:
+        - id: troubleshoot-telemetry
+          name: Troubleshoot via telemetry
+          description: Diagnose Krateo/K8s issues by querying ClickStack telemetry (pod logs, events, metrics, error spikes, restarts, OOMKills).
+          tags: [krateo, observability, clickhouse, telemetry]
+          examples:
+            - Why is this pod crash-looping? Check the telemetry.
+            - Investigate the recent error spike for the frontend.
+    deployment:
+      resources:
+{{- toYaml .Values.resources | nindent 8 }}

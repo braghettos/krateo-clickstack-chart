@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "krateo-clickstack-agent values",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "namespace": { "type": "string" },
+    "modelConfig": { "type": "string" },
+    "prompts": { "type": "object", "additionalProperties": false, "properties": { "language": { "type": "string" } } },
+    "vertexAI": { "type": "object", "additionalProperties": false, "properties": { "enabled": {"type":"boolean"}, "projectID": {"type":"string"}, "location": {"type":"string"} } },
+    "github": { "type": "object", "additionalProperties": false, "properties": { "enabled": {"type":"boolean"}, "mcpServer": {"type":"string"} } },
+    "resources": { "type": "object", "additionalProperties": true },
+    "global": { "type": "object", "additionalProperties": true }
+  }
+}

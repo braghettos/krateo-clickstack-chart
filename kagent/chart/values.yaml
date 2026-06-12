@@ -1,0 +1,18 @@
+namespace: krateo-system
+modelConfig: gemini-flash
+prompts:
+  language: eng
+vertexAI:
+  enabled: true
+  projectID: ""
+  location: us-central1
+github:
+  enabled: true
+  mcpServer: github-mcp-server
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi

@@ -52,3 +52,10 @@ jobs:
             helm push "${pkg}" "${OCI_REPO}"
             echo "::endgroup::"
           done
+
+      - name: Package & push the federated agent chart (if present)
+        run: |
+          if [ -f kagent/chart/Chart.yaml ]; then
+            helm package kagent/chart -d dist-agent/
+            helm push dist-agent/*.tgz "${OCI_REPO}"
+          fi
