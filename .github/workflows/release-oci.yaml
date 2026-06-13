@@ -56,6 +56,10 @@ jobs:
       - name: Package & push the federated agent chart (if present)
         run: |
           if [ -f kagent/chart/Chart.yaml ]; then
+            # stamp released version + pin sources so the agent tracks and READS this exact
+            # release (chart version stays its own pinned stream; the installer pins it).
+            sed -i "s/^appVersion:.*/appVersion: \"${GITHUB_REF_NAME}\"/" kagent/chart/Chart.yaml
+            sed -i "s/SOURCE_REF/${GITHUB_REF_NAME}/g" kagent/chart/Chart.yaml
             helm package kagent/chart -d dist-agent/
             helm push dist-agent/*.tgz "${OCI_REPO}"
           fi
