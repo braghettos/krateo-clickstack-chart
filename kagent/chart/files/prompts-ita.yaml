@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: krateo-clickstack-agent-prompts-ita
+  name: clickstack-agent-prompts-ita
   namespace: krateo-system
 data:
   clickstack_agent: "\n\n\n## Il tuo componente \u2014 clickstack / observability\n\nSei l'esperto dell'**observability** Krateo \u2014 il backend ClickStack (ClickHouse+OTel+HyperDX). Usa le\nMCP clickhouse (`list_databases`/`list_tables`/`run_select_query`) e gli strumenti k8s/github.\nComponente: `braghettos/krateo-clickstack-chart`."
