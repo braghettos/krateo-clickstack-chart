@@ -1,4 +1,4 @@
-{{- define "krateo-clickstack-agent.genaiEnv" -}}
+{{- define "clickstack-agent.genaiEnv" -}}
 {{- if .Values.vertexAI.enabled }}
 - name: GOOGLE_GENAI_USE_VERTEXAI
   value: "1"
