@@ -50,18 +50,31 @@ clickstack:
 
   clickhouse:
     enabled: true
-    # ClickHouse 26.3 LTS (Map bucketed serialization, materialized CTEs, RBAC fixes).
+    # IMPORTANT: upstream clickstack 3.0.0 renders ONLY `clickhouse.cluster.spec` into the
+    # ClickHouseCluster CR (templates/clickhouse/cluster.yaml: `tpl (toYaml
+    # .Values.clickhouse.cluster.spec)`) and references NONE of the top-level clickhouse.*
+    # keys. So container resources MUST live under cluster.spec.containerTemplate.resources
+    # to take effect; the old top-level `resources:` here was INERT (ClickHouse ran at the
+    # operator default ~1Gi and the bell /notifications poller OOMed — MEMORY_LIMIT_EXCEEDED).
+    cluster:
+      spec:
+        containerTemplate:
+          resources:
+            limits:
+              cpu: "4"
+              memory: 8Gi
+            requests:
+              cpu: "1"
+              memory: 2Gi
+    # STILL INERT (same wrong-path bug): upstream ignores these top-level keys. NOT moved to
+    # cluster.spec on purpose — applying them live = ClickHouse version upgrade (25.7->26.3)
+    # + PVC resize (10Gi->50Gi), a deliberate change that must not ride along with the memory
+    # fix. To realize later: image -> cluster.spec.containerTemplate.image; size ->
+    # cluster.spec.dataVolumeClaimSpec.resources.requests.storage.
     image: "clickhouse/clickhouse-server:26.3-alpine"
     persistence:
       enabled: true
       size: 50Gi
-    resources:
-      limits:
-        cpu: "4"
-        memory: 8Gi
-      requests:
-        cpu: "1"
-        memory: 2Gi
     # Mount the clickhouse-http-handlers ConfigMap (rendered by this chart) into
     # /etc/clickhouse-server/config.d/ so the /events handler is registered.
     extraVolumes:
