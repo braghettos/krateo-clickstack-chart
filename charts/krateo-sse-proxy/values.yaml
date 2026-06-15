@@ -1,6 +1,14 @@
 global: {}
 
-replicaCount: 2
+# Single replica: sse-proxy is a STATEFUL in-memory SSE hub (each pod runs its own
+# ClickHouse poller + client hub). Behind an L4 LoadBalancer with sessionAffinity:None,
+# GCP hashes each client to one backend, so a client deterministically pins to a single
+# replica — if any replica degrades (e.g. its poller/ClickHouse path), a fixed subset of
+# users gets stuck 503s on /notifications (this is exactly what broke the portal bell).
+# A single hub eliminates the split. HA isn't needed for this lightweight proxy; the
+# poller resumes from lastSeenUnix on restart. (To scale >1 later: gate readiness on
+# poller health AND add sessionAffinity, or move to a shared event store.)
+replicaCount: 1
 
 image:
   repository: ghcr.io/braghettos/krateo-sse-proxy
