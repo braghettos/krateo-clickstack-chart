@@ -1,0 +1,78 @@
+---
+# NetworkPolicies restricting access to ClickHouse.
+# Only OTel collectors, SSE Proxy, and MCP Servers can reach ClickHouse.
+#
+# Prerequisites:
+#   - A CNI plugin that supports NetworkPolicy (Calico, Cilium, etc.)
+#   - ClickHouse pods must have the label used in the podSelector
+#
+# Apply: kubectl apply -f network-policies.yaml
+
+# Restrict ClickHouse ingress to known consumers
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: clickhouse-ingress
+  namespace: clickhouse-system
+  labels:
+    app.kubernetes.io/part-of: krateo-observability-stack
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: clickhouse
+  policyTypes:
+    - Ingress
+  ingress:
+    # TCP port 9000 — OTel collectors (ClickHouse native protocol)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: clickhouse-system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/component: opentelemetry-collector
+      ports:
+        - protocol: TCP
+          port: 9000
+    # HTTP port 8123 — SSE Proxy, MCP Server, HyperDX, RESTActions
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: krateo-system
+          podSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - krateo-sse-proxy
+                  - clickhouse-mcp-server
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: clickhouse-system
+      ports:
+        - protocol: TCP
+          port: 8123
+---
+# Restrict MCP Server ingress to agent pods and port-forward
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: mcp-server-ingress
+  namespace: krateo-system
+  labels:
+    app.kubernetes.io/part-of: krateo-observability-stack
+spec:
+  podSelector:
+    matchLabels:
+      app: clickhouse-mcp-server
+  policyTypes:
+    - Ingress
+  ingress:
+    # MCP port 8000 — kagent agents in krateo-system
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: krateo-system
+      ports:
+        - protocol: TCP
+          port: 8000

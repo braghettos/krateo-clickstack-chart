@@ -6,10 +6,14 @@ opentelemetry-collector:
   replicaCount: 1
 
   image:
-    repository: ghcr.io/braghettos/otelcol-krateo
-    tag: "0.1.0"
+    # Renamed otelcol-krateo -> krateo-otel-collector when the custom collector was split
+    # into its own single-image repo (braghettos/krateo-otel-collector) on the canonical CI.
+    repository: ghcr.io/braghettos/krateo-otel-collector
+    tag: "1.0.0"
     pullPolicy: IfNotPresent
 
+  # The container binary is still named otelcol-krateo (OTel builder dist.name / Dockerfile
+  # ENTRYPOINT); only the published image repository was renamed to krateo-otel-collector.
   command:
     name: otelcol-krateo
 

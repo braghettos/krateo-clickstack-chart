@@ -1,0 +1,80 @@
+---
+# Observability Stack Heartbeat Canary
+#
+# A CronJob that runs every minute and writes a canary log to stdout.
+# The OTel DaemonSet collects this log into ClickHouse.
+#
+# If ClickHouse stops receiving canary logs, the OTel pipeline is broken.
+# Configure a HyperDX "absence" alert that fires when canary logs are
+# missing for > 3 minutes.
+#
+# HyperDX Saved Search filter:
+#   ResourceAttributes['k8s.pod.labels.app'] = 'krateo-heartbeat-canary'
+#
+# HyperDX Alert: type=absence, threshold=0 (fires when count drops to 0),
+#   interval=3m, channel=secondary webhook (not Slack — Slack may be down too)
+#
+# Apply: kubectl apply -f canary-heartbeat.yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: krateo-heartbeat-canary
+  namespace: krateo-system
+  labels:
+    app.kubernetes.io/name: krateo-heartbeat-canary
+    app.kubernetes.io/part-of: krateo-observability-stack
+    app.kubernetes.io/component: self-monitoring
+spec:
+  schedule: "* * * * *"  # Every minute
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 30
+      template:
+        metadata:
+          labels:
+            app: krateo-heartbeat-canary
+            app.kubernetes.io/name: krateo-heartbeat-canary
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: canary
+              image: busybox:1.36
+              command:
+                - sh
+                - -c
+                - |
+                  echo "{\"level\":\"INFO\",\"msg\":\"heartbeat-canary\",\"component\":\"krateo-observability-stack\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}"
+              resources:
+                limits:
+                  cpu: 10m
+                  memory: 8Mi
+                requests:
+                  cpu: 5m
+                  memory: 4Mi
+              securityContext:
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+                runAsUser: 65534
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: [ALL]
+          securityContext:
+            runAsNonRoot: true
+---
+# Bootstrap script for creating the HyperDX absence alert.
+# Run this after the canary is deployed and producing logs:
+#
+#   1. In HyperDX, create a Saved Search with filter:
+#      ResourceAttributes['k8s.pod.labels.app'] = 'krateo-heartbeat-canary'
+#
+#   2. Add an alert to the saved search:
+#      - Type: absence (fires when expected logs are missing)
+#      - Interval: 3 minutes
+#      - Channel: secondary webhook (NOT Slack — if Slack is down, we need backup)
+#
+#   3. Alternatively, if HyperDX supports API-based absence alerts,
+#      adapt pod-restart-alert/bootstrap-alert.sh with threshold_type: "below"

@@ -1,0 +1,87 @@
+# ClickStack Helm values for Krateo Kubernetes Observability
+#
+# Install:
+#   helm repo add clickstack https://clickhouse.github.io/ClickStack-helm-charts
+#   helm repo update
+#   helm install krateo-clickstack clickstack/clickstack \
+#     --namespace clickhouse-system --create-namespace \
+#     -f values.yaml
+
+# Global settings applied across all sub-charts.
+# storageClassName overrides the chart default (local-path) for GKE compatibility.
+global:
+  storageClassName: "standard-rwo"
+
+# ---------------------------------------------------------------------------
+# ClickHouse
+# ---------------------------------------------------------------------------
+clickhouse:
+  enabled: true
+  # ClickHouse 26.3 LTS — upgraded from 26.2 for:
+  # - Map column bucketed serialization (2-49x faster ResourceAttributes lookups)
+  # - Materialized CTEs, text index enhancements, partition pruning improvements
+  # - RBAC security fixes (remote() bypass, stricter table function access)
+  # NOTE: Cannot downgrade back to 26.2 after this upgrade (serialization version change)
+  image: "clickhouse/clickhouse-server:26.3-alpine"
+  persistence:
+    enabled: true
+    size: 50Gi
+  resources:
+    limits:
+      cpu: "4"
+      memory: 8Gi
+    requests:
+      cpu: "1"
+      memory: 2Gi
+  # Extra configuration files mounted into /etc/clickhouse-server/config.d/
+  # The http-handlers ConfigMap is applied separately (see clickhouse-config/).
+  extraVolumes:
+    - name: http-handlers-config
+      configMap:
+        name: clickhouse-http-handlers
+  extraVolumeMounts:
+    - name: http-handlers-config
+      mountPath: /etc/clickhouse-server/config.d/http-handlers.xml
+      subPath: http-handlers.xml
+
+# ---------------------------------------------------------------------------
+# OpenTelemetry Collector Gateway (receives from DaemonSet + Deployment collectors)
+# ---------------------------------------------------------------------------
+otel:
+  enabled: true
+  resources:
+    limits:
+      cpu: "1"
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+# ---------------------------------------------------------------------------
+# HyperDX UI
+# ---------------------------------------------------------------------------
+# NOTE: The ClickStack chart does not expose a service.type value for HyperDX.
+# After install/upgrade, patch the service to LoadBalancer manually or via
+# install.sh (Phase 2b):
+#   kubectl patch svc krateo-clickstack-app -n clickhouse-system \
+#     -p '{"spec": {"type": "LoadBalancer"}}'
+hyperdx:
+  enabled: true
+  # appUrl must NOT include the port — the chart template appends ":appPort" automatically.
+  # NEXTAUTH_URL must be set explicitly so Next.js auth redirects to the correct external URL.
+  # Uses a reserved GCP static IP so the address survives Helm upgrades.
+  # Static IP: gcloud compute addresses create hyperdx-static-ip --region=us-central1 --project=neon-481711
+  appUrl: "http://34.59.191.193"
+  ingress:
+    enabled: false
+  env:
+    - name: NEXTAUTH_URL
+      value: "http://34.59.191.193:3000"
+
+# ---------------------------------------------------------------------------
+# MongoDB (used by HyperDX for persistent state)
+# ---------------------------------------------------------------------------
+mongodb:
+  enabled: true
+  persistence:
+    size: 10Gi
