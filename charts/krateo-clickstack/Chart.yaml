@@ -7,7 +7,12 @@ description: >-
   otel-clickhouse credentials Secret, and a HyperDX LoadBalancer Service.
   Replaces obs-stack install.sh phases 1, 2, 2b and 2c (no imperative kubectl).
 type: application
-version: 0.1.2
+# 0.1.3: bump to make the ClickHouse 8Gi/2Gi (image 26.3-alpine, 50Gi) resourcing
+# change a REAL, immutable version. 0.1.2 had been mutably overwritten with 8Gi at a
+# later repo tag, but consumers (core-provider/helm) cache by version tag and never
+# re-pull an unchanged version — so live ClickHouse stayed at the old 1Gi and OOMed
+# the sse-proxy /notifications query. A version bump forces the re-pull.
+version: 0.1.3
 appVersion: "3.0.0"
 dependencies:
   - name: clickstack
