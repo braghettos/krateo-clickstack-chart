@@ -1,0 +1,49 @@
+---
+# PodDisruptionBudgets for critical observability stack components.
+# Ensures at least 1 replica remains available during voluntary disruptions
+# (node drain, rolling updates, cluster maintenance).
+#
+# Apply: kubectl apply -f pod-disruption-budgets.yaml
+
+# SSE Proxy — stateless, 2 replicas
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: krateo-sse-proxy
+  namespace: krateo-system
+  labels:
+    app.kubernetes.io/part-of: krateo-observability-stack
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: krateo-sse-proxy
+---
+# ClickHouse MCP Server — stateless, 2 replicas
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: clickhouse-mcp-server
+  namespace: krateo-system
+  labels:
+    app.kubernetes.io/part-of: krateo-observability-stack
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: clickhouse-mcp-server
+---
+# OTel Deployment — single replica (watch-based, cannot trivially scale)
+# PDB prevents it from being evicted during voluntary disruptions.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: otel-deployment
+  namespace: clickhouse-system
+  labels:
+    app.kubernetes.io/part-of: krateo-observability-stack
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: otel-deployment
