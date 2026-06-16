@@ -96,6 +96,15 @@ clickstack:
         cpu: 100m
         memory: 256Mi
 
+  # Disable ClickStack/HyperDX's bundled OpAMP otel-collector (opentelemetry-collector
+  # subchart). It crashlooped (exit 2): the image runs in OpAMP supervisor mode, ignores the
+  # chart's --config relay.yaml (debug-only, no ClickHouse exporter), and HyperDX's OpAMP
+  # server never pushes a working config. REDUNDANT here -- Krateo's own otel-collector
+  # daemonset + the compositionresolver deployment do the real ClickHouse ingestion (with
+  # krateo.io/composition-id). HyperDX still reads from ClickHouse, which they populate.
+  otel-collector:
+    enabled: false
+
   hyperdx:
     enabled: true
     ingress:
