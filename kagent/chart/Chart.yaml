@@ -3,7 +3,7 @@ name: krateo-clickstack-agent
 description: >-
   The Krateo observability expert: troubleshoots Krateo/K8s issues by querying the ClickStack telemetry backend (ClickHouse+OTel+HyperDX). Knows braghettos/krateo-clickstack-chart.
 type: application
-version: 0.1.1
+version: 0.1.2
 appVersion: CHART_VERSION
 home: https://krateo.io
 icon: https://github.com/krateoplatformops/krateo/blob/main/docs/media/logo.svg
