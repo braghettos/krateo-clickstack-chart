@@ -20,4 +20,4 @@ keywords:
   - observability
 sources:
   - https://github.com/braghettos/krateo-clickstack-chart
-  - https://github.com/braghettos/krateo-clickstack
+  - https://github.com/braghettos/krateo-otel-collector

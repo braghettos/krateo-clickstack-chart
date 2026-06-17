@@ -9,7 +9,7 @@ metadata:
 spec:
   type: Declarative
   description: >-
-    The Krateo observability expert: troubleshoots Krateo/K8s issues by querying the ClickStack telemetry backend (ClickHouse+OTel+HyperDX). Knows braghettos/krateo-clickstack-chart.
+    The Krateo observability expert: troubleshoots Krateo/K8s issues by querying the ClickStack telemetry backend (ClickHouse+OTel+HyperDX). Grounds in braghettos/krateo-clickstack-chart (deployment/CRDs/wiring) and braghettos/krateo-otel-collector (internals) at the deployed version.
   declarative:
     deployment:
       env:
