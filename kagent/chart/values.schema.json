@@ -98,6 +98,19 @@
     "global": {
       "type": "object",
       "additionalProperties": true
+    },
+    "fetch": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Tokenless fetch MCP server the agent uses to GET its version-pinned public raw docs/llms.txt URL (no auth/token).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "mcpServer": {
+          "type": "string"
+        }
+      }
     }
   }
 }
