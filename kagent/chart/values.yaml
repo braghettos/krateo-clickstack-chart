@@ -18,8 +18,17 @@ vertexAI:
   enabled: true
   projectID: ""
   location: us-central1
-github:
+# Tokenless fetch MCP (kagent MCPServer, fetch-mcp-server) — GETs the version-pinned public raw
+# docs/llms.txt URL (no token/auth). This is the default grounding path; the chart stamps the
+# deployed tag into the URL in the prompt footer.
+fetch:
   enabled: true
+  mcpServer: fetch-mcp-server
+
+# github MCP server for DEEPER source reading (search_code, etc.) — OPT-IN, off by default: it
+# requires the github-mcp-server running with a PAT. Doc grounding uses the tokenless fetch tool above.
+github:
+  enabled: false
   mcpServer: github-mcp-server
 resources:
   requests:
