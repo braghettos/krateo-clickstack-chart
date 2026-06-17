@@ -1,10 +1,10 @@
 apiVersion: kagent.dev/v1alpha2
 kind: Agent
 metadata:
-  name: clickstack-agent
+  name: krateo-clickstack-agent
   namespace: {{ .Values.namespace }}
   labels:
-    app.kubernetes.io/name: clickstack-agent
+    app.kubernetes.io/name: krateo-clickstack-agent
     app.kubernetes.io/part-of: krateo-clickstack
 spec:
   type: Declarative
