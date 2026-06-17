@@ -48,6 +48,6 @@ CRDs, not by this repo:
 - **`ClickHouseCluster` / collector CRDs:** the upstream operators (ClickHouse operator,
   OpenTelemetry operator/helm chart) — not in this repo.
 - **Runtime contracts** (the `compositionresolver` label, the `/events` query shape): the code repo
-  `braghettos/krateo-clickstack` `docs/` (at the image tag) and `files/http-handlers.xml` here.
+  `braghettos/krateo-otel-collector` `docs/` (at the image tag) and `files/http-handlers.xml` here.
 
 See [overview.md](overview.md) for the chart layout and [wiring.md](wiring.md) for the values surface.

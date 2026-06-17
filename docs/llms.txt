@@ -6,7 +6,7 @@
 > federated observability agent chart. This index is the agent entry point to the **deployment,
 > CRD and wiring** view. The **internals & runtime** view (the OTel collector code, the
 > `compositionresolver` processor, the sse-proxy binary) lives in the code repo
-> `braghettos/krateo-clickstack` `docs/`.
+> `braghettos/krateo-otel-collector` `docs/`.
 
 ## How to use this index (agents)
 
@@ -16,10 +16,10 @@ the running build**, not `main`:
 
 - chart version = `CompositionDefinition.spec.chart.version` for clickstack (Kind `KrateoClickstack`)
   → THIS repo's tag. Read this repo's `docs/` at that tag.
-- The **internals view** (the custom OTel collector image, the `compositionresolver` processor, the
-  sse-proxy poller/hub) is the OTHER half: read `braghettos/krateo-clickstack` `docs/llms.txt` at the
-  **image-version** tag — the deployed component's container image tag (e.g. the
-  `krateo-otel-collector` / `krateo-sse-proxy` image tag).
+- The **internals view** (the custom OTel collector image + the `compositionresolver` processor —
+  the telemetry path into ClickHouse) is the OTHER half: read `braghettos/krateo-otel-collector`
+  `docs/llms.txt` at the **image-version** tag (the collector deployment's container image tag). The
+  portal events-bell path is a sibling component, the SSE proxy (code in `braghettos/krateo-sse-proxy`).
 
 If something isn't in the docs, read the chart/source at that same tag — don't guess, and don't trust
 `main` for a deployed older version. The agent chart (`kagent/chart`, `0.1.x`) versions independently
@@ -48,7 +48,7 @@ of the clickstack component it speaks for — do not read its version as the com
 
 ## Cross-repo (the internals & runtime half)
 
-- [code-repo docs/llms.txt](https://github.com/braghettos/krateo-clickstack/blob/main/docs/llms.txt):
+- [code-repo docs/llms.txt](https://github.com/braghettos/krateo-otel-collector/blob/main/docs/llms.txt):
   the code repo's index → the custom OTel collector build, the `compositionresolver` processor
   (how K8s events get the `krateo.io/composition-id` label), and the sse-proxy poller/hub runtime.
   Versioned at the **image** tag.

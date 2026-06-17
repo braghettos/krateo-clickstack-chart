@@ -138,6 +138,6 @@ can reach it. The deployed chart version is readable from `CompositionDefinition
 
 - [overview.md](overview.md) — chart layout, the CompositionDefinitions, what gets deployed.
 - [crds.md](crds.md) — why this component owns no hand-authored CRD; the generated composition type.
-- Code repo runtime view: `braghettos/krateo-clickstack`
-  [`docs/llms.txt`](https://github.com/braghettos/krateo-clickstack/blob/main/docs/llms.txt)
+- Code repo runtime view: `braghettos/krateo-otel-collector`
+  [`docs/llms.txt`](https://github.com/braghettos/krateo-otel-collector/blob/main/docs/llms.txt)
   (the custom OTel collector, the `compositionresolver` processor, the sse-proxy poller/hub).

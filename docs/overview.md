@@ -3,7 +3,7 @@
 What the Krateo **ClickStack observability blueprint** is, and **how it deploys** as a set of Krateo
 compositions. This is the deployment view; the internals/runtime view (the custom OTel collector, the
 `compositionresolver` processor, the sse-proxy binary) lives in the code repo
-`braghettos/krateo-clickstack` (`docs/`). Every claim below is traced to a file in this repo — if a
+`braghettos/krateo-otel-collector` (`docs/`). Every claim below is traced to a file in this repo — if a
 comment disagrees with what the chart actually renders, the rendered chart wins.
 
 ## What clickstack is
@@ -125,8 +125,8 @@ For the full per-chart `values.yaml` surface, the installer wiring, and the oper
 
 ## Cross-references
 
-- **Code repo (internals & runtime):** `braghettos/krateo-clickstack` —
-  [`docs/llms.txt`](https://github.com/braghettos/krateo-clickstack/blob/main/docs/llms.txt). That set
+- **Code repo (internals & runtime):** `braghettos/krateo-otel-collector` —
+  [`docs/llms.txt`](https://github.com/braghettos/krateo-otel-collector/blob/main/docs/llms.txt). That set
   is versioned at the **image** tag (the collector/sse-proxy image tags); this set is versioned at the
   **chart** tag.
 - **Installer umbrella:** `braghettos/krateo-installer` (owns the CompositionDefinitions).
