@@ -1,9 +1,9 @@
 apiVersion: v2
 name: krateo-clickstack-agent
 description: >-
-  The Krateo observability expert: troubleshoots Krateo/K8s issues by querying the ClickStack telemetry backend (ClickHouse+OTel+HyperDX). Knows braghettos/krateo-clickstack-chart.
+  The Krateo observability expert: troubleshoots Krateo/K8s issues by querying the ClickStack telemetry backend (ClickHouse+OTel+HyperDX). Grounds in braghettos/krateo-clickstack-chart (deployment/CRDs/wiring) and braghettos/krateo-clickstack (internals) at the deployed version.
 type: application
-version: 0.1.3
+version: 0.1.4
 appVersion: CHART_VERSION
 home: https://krateo.io
 icon: https://github.com/krateoplatformops/krateo/blob/main/docs/media/logo.svg
@@ -16,3 +16,4 @@ keywords:
   - observability
 sources:
   - https://github.com/braghettos/krateo-clickstack-chart/tree/SOURCE_REF
+  - https://github.com/braghettos/krateo-clickstack
