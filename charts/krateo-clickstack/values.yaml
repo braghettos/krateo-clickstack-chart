@@ -11,11 +11,12 @@ global:
 # ---------------------------------------------------------------------------
 # Krateo additions (rendered by this chart's own templates)
 # ---------------------------------------------------------------------------
-# ClickHouse HTTP-handlers ConfigMap (clickhouse-http-handlers). Mounted by the
-# ClickHouse pods via clickstack.clickhouse.extraVolumes below. Exposes
-# GET /events?composition_id=<uid> for the portal events bell.
-httpHandlers:
-  enabled: true
+# NOTE: the GET /events?composition_id=<uid> ClickHouse HTTP handler (used by the
+# portal events bell + the sse-proxy /notifications poller) is NO LONGER a separate
+# ConfigMap mounted via clickstack.clickhouse.extraVolumes — that path is inert
+# (upstream renders only cluster.spec) and the file-mount crashlooped on kind. It now
+# lives natively in clickstack.clickhouse.cluster.spec.settings.extraConfig.http_handlers
+# (see below), which the clickhouse.com operator merges into config.d/.
 
 # Credentials Secret for the OTel collectors (otel-clickhouse-credentials).
 # Created in THIS release's namespace (krateo-system) — the same namespace the
@@ -66,6 +67,78 @@ clickstack:
             requests:
               cpu: "1"
               memory: 2Gi
+        # ClickHouse server config merged into /etc/clickhouse-server/config.d/ by the
+        # clickhouse.com operator. The GET /events?composition_id=<uid> handler MUST be
+        # registered here, NOT via clickhouse.extraVolumes (see below): a predefined HTTP
+        # handler is the ONLY supported way to serve /events — the portal events bell and
+        # the sse-proxy /notifications poller both call this endpoint; the raw native-SQL /
+        # dynamic-query API path is intentionally not used.
+        #
+        # Why extraConfig and not a mounted ConfigMap file:
+        #   - upstream clickstack 3.0.0 renders ONLY clickhouse.cluster.spec into the
+        #     ClickHouseCluster CR (templates/clickhouse/cluster.yaml does
+        #     `tpl (toYaml .Values.clickhouse.cluster.spec)`), so clickhouse.extraVolumes /
+        #     extraVolumeMounts are NEVER read — the old clickhouse-http-handlers ConfigMap
+        #     was a dead object and /events 404'd;
+        #   - the clickhouse.com ClickHouseCluster CRD has no extraVolumes field anyway —
+        #     volumes go under cluster.spec.podTemplate.volumes + containerTemplate.volumeMounts;
+        #   - and a subPath file-mount into config.d/ crashloops the pod on kind/containerd
+        #     ("not a directory").
+        # settings.extraConfig is the operator-native merge point: the operator writes it into
+        # config.d/ (as YAML, which ClickHouse loads natively). A YAML list under `rule` renders
+        # to repeated <rule> elements. The /ping, /replicas_status, /metrics and the catch-all `/`
+        # dynamic_query_handler rules are required: once http_handlers is defined ClickHouse stops
+        # serving its default routes, so the operator probes + native query API must be re-declared.
+        settings:
+          extraConfig:
+            http_handlers:
+              rule:
+                # GET /events?composition_id=<uid>
+                # The compositionresolver OTel processor enriches each K8s event with
+                # LogAttributes['krateo.io/composition-id'] (composition resource UID).
+                - url: "/events"
+                  methods: "GET"
+                  handler:
+                    type: predefined_query_handler
+                    query: |
+                      SELECT
+                          ifNull(JSONExtractString(Body, 'object', 'involvedObject', 'name'), '')      AS obj_name,
+                          ifNull(JSONExtractString(Body, 'object', 'involvedObject', 'namespace'), '') AS obj_namespace,
+                          ifNull(JSONExtractString(Body, 'object', 'involvedObject', 'uid'), '')       AS obj_uid,
+                          ifNull(JSONExtractString(Body, 'object', 'involvedObject', 'kind'), '')      AS obj_kind,
+                          ifNull(JSONExtractString(Body, 'object', 'reason'), '')                      AS reason,
+                          ifNull(JSONExtractString(Body, 'object', 'message'), '')                     AS message,
+                          ifNull(JSONExtractString(Body, 'object', 'type'), 'Normal')                  AS type,
+                          coalesce(
+                              nullIf(JSONExtractString(Body, 'object', 'eventTime'), ''),
+                              nullIf(JSONExtractString(Body, 'object', 'lastTimestamp'), ''),
+                              formatDateTime(toDateTime(Timestamp), '%Y-%m-%dT%H:%i:%SZ', 'UTC')
+                          )                                                                             AS eventTime,
+                          ifNull(JSONExtractString(Body, 'object', 'source', 'component'), '')         AS source_component
+                      FROM otel_logs
+                      WHERE ResourceAttributes['telemetry.source'] = 'k8s-events'
+                        AND LogAttributes['krateo.io/composition-id'] = {composition_id:String}
+                        AND JSONExtractString(Body, 'object', 'reason') != ''
+                      ORDER BY Timestamp DESC
+                      LIMIT 50
+                      FORMAT JSON
+                - url: "/ping"
+                  handler:
+                    type: static
+                    status: 200
+                    content_type: "text/plain; charset=UTF-8"
+                    response_content: "Ok.\n"
+                - url: "/replicas_status"
+                  handler:
+                    type: replicas_status
+                - url: "/metrics"
+                  handler:
+                    type: prometheus
+                - url: "/"
+                  methods: "GET,POST"
+                  handler:
+                    type: dynamic_query_handler
+                    query_param_name: query
     # STILL INERT (same wrong-path bug): upstream ignores these top-level keys. NOT moved to
     # cluster.spec on purpose — applying them live = ClickHouse version upgrade (25.7->26.3)
     # + PVC resize (10Gi->50Gi), a deliberate change that must not ride along with the memory
@@ -75,16 +148,6 @@ clickstack:
     persistence:
       enabled: true
       size: 50Gi
-    # Mount the clickhouse-http-handlers ConfigMap (rendered by this chart) into
-    # /etc/clickhouse-server/config.d/ so the /events handler is registered.
-    extraVolumes:
-      - name: http-handlers-config
-        configMap:
-          name: clickhouse-http-handlers
-    extraVolumeMounts:
-      - name: http-handlers-config
-        mountPath: /etc/clickhouse-server/config.d/http-handlers.xml
-        subPath: http-handlers.xml
 
   otel:
     enabled: true

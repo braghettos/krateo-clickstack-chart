@@ -14,15 +14,6 @@
       },
       "description": "Global values propagated to clickstack and its subcharts."
     },
-    "httpHandlers": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "enabled": {
-          "type": "boolean"
-        }
-      }
-    },
     "otelCredentials": {
       "type": "object",
       "additionalProperties": false,
@@ -113,45 +104,6 @@
                     "memory": {
                       "type": "string"
                     }
-                  }
-                }
-              }
-            },
-            "extraVolumes": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "additionalProperties": true,
-                "properties": {
-                  "name": {
-                    "type": "string"
-                  },
-                  "configMap": {
-                    "type": "object",
-                    "additionalProperties": true,
-                    "properties": {
-                      "name": {
-                        "type": "string"
-                      }
-                    }
-                  }
-                }
-              }
-            },
-            "extraVolumeMounts": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "additionalProperties": true,
-                "properties": {
-                  "name": {
-                    "type": "string"
-                  },
-                  "mountPath": {
-                    "type": "string"
-                  },
-                  "subPath": {
-                    "type": "string"
                   }
                 }
               }
