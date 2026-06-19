@@ -28,7 +28,7 @@ replaces the old imperative `obs-stack` `install.sh` phases (no hand-run `kubect
 
 | Path | Chart name | OCI artifact | Versioning |
 |------|------------|--------------|------------|
-| `charts/krateo-clickstack` | `krateo-clickstack` | `oci://ghcr.io/braghettos/krateo/krateo-clickstack` | tracks the git tag (`Chart.yaml` `version: CHART_VERSION`); current literal `0.1.5`, `appVersion 3.0.0` |
+| `charts/krateo-observability` | `krateo-observability` | `oci://ghcr.io/braghettos/krateo/krateo-observability` | tracks the git tag (`Chart.yaml` `version: CHART_VERSION`); current literal `0.1.5`, `appVersion 3.0.0` |
 | `charts/otel-collector-deployment` | `otel-collector-deployment` | `oci://ghcr.io/braghettos/krateo/otel-collector-deployment` | pinned `0.2.0`, independent |
 | `charts/otel-collector-daemonset` | `otel-collector-daemonset` | `oci://ghcr.io/braghettos/krateo/otel-collector-daemonset` | pinned `0.1.1`, independent |
 | `charts/krateo-sse-proxy` | `krateo-sse-proxy` | `oci://ghcr.io/braghettos/krateo/krateo-sse-proxy` | pinned `0.1.3`, independent |
@@ -36,11 +36,11 @@ replaces the old imperative `obs-stack` `install.sh` phases (no hand-run `kubect
 
 They version **independently**:
 
-- **The ClickStack wrapper** (`charts/krateo-clickstack`) is the heaviest piece. `version` is the
+- **The ClickStack wrapper** (`charts/krateo-observability`) is the heaviest piece. `version` is the
   `CHART_VERSION` placeholder substituted to the git tag at release; `appVersion` is `3.0.0` (the
   upstream `clickstack` dependency version, `Chart.yaml`). It vendors the upstream `clickstack`
   `3.0.0` chart as a dependency and passes most values through under the `clickstack:` key. The
-  `KrateoClickstack` composition the installer creates is this chart.
+  `KrateoObservability` composition the installer creates is this chart.
   > **Version bumps are load-bearing for re-pull.** `core-provider`/helm cache a chart by its version
   > tag and never re-pull an *unchanged* version, so a behavioral fix MUST ride a version bump or live
   > clusters keep the old artifact (`Chart.yaml` comment, the `0.1.5` history) — see
@@ -60,11 +60,11 @@ They version **independently**:
 ## The CompositionDefinition
 
 The repo-root `compositiondefinition.yaml` registers the wrapper with Krateo: `core.krateo.io/v1alpha1`,
-name `krateo-clickstack`, namespace `krateo-system`, `spec.chart.url` =
-`oci://ghcr.io/braghettos/krateo/krateo-clickstack`, `spec.chart.version` pinned (currently `"0.1.2"`
+name `krateo-observability`, namespace `krateo-system`, `spec.chart.url` =
+`oci://ghcr.io/braghettos/krateo/krateo-observability`, `spec.chart.version` pinned (currently `"0.1.2"`
 in this file). In a real install the [krateo-installer](https://github.com/braghettos/krateo-installer)
 umbrella owns this and the per-collector CompositionDefinitions (`README.md`). `core-provider` reads
-the wrapper chart's `values.schema.json`, generates the typed `KrateoClickstack` CRD, and reconciles
+the wrapper chart's `values.schema.json`, generates the typed `KrateoObservability` CRD, and reconciles
 one Composition per instance. The deployed chart version is cluster-observable from
 `CompositionDefinition.spec.chart.version` (the tag at which an agent should fetch THIS repo's docs —
 see [llms.txt](llms.txt)).
@@ -79,11 +79,11 @@ namespace `krateo-system`, `spec.chart.version: "0.1.0"`.
 
 ## What each chart deploys
 
-### `charts/krateo-clickstack` (the wrapper)
+### `charts/krateo-observability` (the wrapper)
 
 The vendored upstream `clickstack` subchart renders ClickHouse (via the ClickHouse operator's
 `ClickHouseCluster` CR), the OTel gateway, HyperDX, and MongoDB. Krateo additions rendered by THIS
-chart's own templates (`charts/krateo-clickstack/templates/`):
+chart's own templates (`charts/krateo-observability/templates/`):
 
 - **`clickhouse-http-handlers` ConfigMap** (`http-handlers-configmap.yaml`, gated on
   `httpHandlers.enabled`) — the `GET /events?composition_id=<uid>` predefined-query handler XML from
@@ -96,7 +96,7 @@ chart's own templates (`charts/krateo-clickstack/templates/`):
   `hyperdxLoadBalancer.enabled`) — an ADDITIONAL Service exposing the HyperDX UI on port 3000
   externally (upstream only emits a ClusterIP), with no hardcoded `loadBalancerIP`.
 
-`clickstack.fullnameOverride: krateo-clickstack` keeps the ClickHouse/Keeper/Mongo Service names
+`clickstack.fullnameOverride: krateo-observability` keeps the ClickHouse/Keeper/Mongo Service names
 stable regardless of the random release name `core-provider` assigns, so the collectors and sse-proxy
 can resolve `krateo-clickstack-clickhouse-clickhouse-headless`.
 

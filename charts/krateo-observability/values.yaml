@@ -1,4 +1,4 @@
-# krateo-clickstack — ClickStack for Krateo observability, as a composition.
+# krateo-observability — ClickStack for Krateo observability, as a composition.
 #
 # The heavy upstream `clickstack` values live under the `clickstack:` key and are
 # passed through verbatim. Helm's top-level `global` propagates into clickstack and

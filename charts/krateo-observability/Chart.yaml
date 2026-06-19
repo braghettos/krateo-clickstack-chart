@@ -1,5 +1,5 @@
 apiVersion: v2
-name: krateo-clickstack
+name: krateo-observability
 description: >-
   ClickStack (ClickHouse + OTel gateway + HyperDX + MongoDB) for the Krateo
   observability stack, packaged as a Krateo composition. Wraps the upstream

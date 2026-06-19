@@ -10,7 +10,7 @@ Part of the [krateo-installer](https://github.com/braghettos/krateo-installer) e
 
 | Path | Chart | OCI artifact | Purpose |
 |------|-------|--------------|---------|
-| `charts/krateo-clickstack` | `krateo-clickstack` | `oci://ghcr.io/braghettos/krateo/krateo-clickstack` | ClickStack (ClickHouse + OTel gateway + HyperDX + MongoDB) wrapper: `values.schema.json`, the ClickHouse http-handlers ConfigMap, the otel-clickhouse credentials Secret and a HyperDX LoadBalancer Service. The composition the installer uses (Kind `KrateoClickstack`) |
+| `charts/krateo-observability` | `krateo-observability` | `oci://ghcr.io/braghettos/krateo/krateo-observability` | ClickStack (ClickHouse + OTel gateway + HyperDX + MongoDB) wrapper: `values.schema.json`, the ClickHouse http-handlers ConfigMap, the otel-clickhouse credentials Secret and a HyperDX LoadBalancer Service. The composition the installer uses (Kind `KrateoObservability`) |
 | `charts/otel-collector-deployment` | `otel-collector-deployment` | `oci://ghcr.io/braghettos/krateo/otel-collector-deployment` | Cluster-level OTel collector that enriches K8s events with `krateo.io/composition-id` and exports to ClickHouse |
 | `charts/otel-collector-daemonset` | `otel-collector-daemonset` | `oci://ghcr.io/braghettos/krateo/otel-collector-daemonset` | Node-level OTel collector for pod logs, host and kubelet metrics |
 | `charts/krateo-sse-proxy` | `krateo-sse-proxy` | `oci://ghcr.io/braghettos/krateo/krateo-sse-proxy` | Polls ClickHouse and pushes new K8s events to the portal via Server-Sent Events |
@@ -19,14 +19,14 @@ Part of the [krateo-installer](https://github.com/braghettos/krateo-installer) e
 
 The installer umbrella emits a `CompositionDefinition` per chart, pointing `core-provider` at the
 OCI artifacts above; `core-provider` generates the typed CRDs and reconciles one Composition per
-instance. The collectors depend on the `krateo-clickstack` composition (for the ClickHouse
+instance. The collectors depend on the `krateo-observability` composition (for the ClickHouse
 credentials Secret), and `krateo-sse-proxy` is exposed so the portal's events bell can reach it.
 
 ## Local validation
 
 ```sh
-helm lint charts/krateo-clickstack
-helm template smoke charts/krateo-clickstack
+helm lint charts/krateo-observability
+helm template smoke charts/krateo-observability
 ```
 
 ## Release
