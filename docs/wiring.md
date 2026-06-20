@@ -4,7 +4,7 @@ The per-chart `values.yaml` surface, how the installer pins and wires the observ
 dependencies, and the real operational gotchas. Everything is traced to the charts; where a stale
 comment disagrees with the rendered chart, the chart wins.
 
-## `charts/krateo-clickstack` — the wrapper surface
+## `charts/krateo-observability` — the wrapper surface
 
 The heavy upstream values live under `clickstack:` and are passed through verbatim; Helm's top-level
 `global` propagates into clickstack and all its subcharts (clickhouse / otel / hyperdx / mongodb).
@@ -17,7 +17,7 @@ The heavy upstream values live under `clickstack:` and are passed through verbat
   `port: 3000`. Renders an ADDITIONAL `LoadBalancer` Service (upstream only emits the ClusterIP
   `krateo-clickstack-app`); selector mirrors the upstream app pods, no hardcoded `loadBalancerIP`.
   Expose HyperDX through the installer CR / this flag, not by hand-patching the upstream Service.
-- `clickstack.hyperdx.ingress.enabled: false`, `clickstack.fullnameOverride: krateo-clickstack`
+- `clickstack.hyperdx.ingress.enabled: false`, `clickstack.fullnameOverride: krateo-observability`
   (keeps ClickHouse/Keeper/Mongo Service names stable under `core-provider`'s random release name).
 
 ### Krateo additions (this chart's own templates)
@@ -108,8 +108,8 @@ kubelet metrics → ClickHouse.
 The [krateo-installer](https://github.com/braghettos/krateo-installer) umbrella owns the
 CompositionDefinitions for the wrapper and the collectors (`README.md`). It pins each
 `spec.chart.version` to a released chart tag and points `core-provider` at the OCI artifacts;
-`core-provider` reads `charts/krateo-clickstack/values.schema.json`, generates the `KrateoClickstack`
-CRD, and reconciles one Composition per instance. The collectors depend on the `krateo-clickstack`
+`core-provider` reads `charts/krateo-observability/values.schema.json`, generates the `KrateoObservability`
+CRD, and reconciles one Composition per instance. The collectors depend on the `krateo-observability`
 composition (for the credentials Secret), and `krateo-sse-proxy` is exposed so the portal events bell
 can reach it. The deployed chart version is readable from `CompositionDefinition.spec.chart.version`
 (the tag at which to fetch THIS repo's docs).
@@ -131,7 +131,7 @@ can reach it. The deployed chart version is readable from `CompositionDefinition
   the `otelcollector` user clickstack provisions; a mismatch silently fails ClickHouse writes.
 - **Keep the bundled otel-collector disabled.** Re-enabling `clickstack.otel-collector` brings back the
   crashlooping OpAMP collector and duplicates ingestion without `krateo.io/composition-id`.
-- **`KrateoClickstack` is generated, not authored.** Don't look for a CRD YAML to edit — change the
+- **`KrateoObservability` is generated, not authored.** Don't look for a CRD YAML to edit — change the
   chart values surface and let `core-provider` re-derive the type (see [crds.md](crds.md)).
 
 ## See also
