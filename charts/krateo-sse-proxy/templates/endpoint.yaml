@@ -1,0 +1,18 @@
+{{/*
+  Endpoint Secret consumed by snowplow RESTActions (endpointRef:
+  sse-proxy-internal-endpoint) to fetch this proxy's historical /events snapshot
+  IN-CLUSTER. Mirrors the retired krateoplatformops/eventsse-chart endpoint.yaml.
+  Fixed name `sse-proxy-internal-endpoint` — the composition-events / events RAs
+  reference it by that exact name. server-url targets this chart's own Service.
+*/}}
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: sse-proxy-internal-endpoint
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "krateo-sse-proxy.labels" . | nindent 4 }}
+stringData:
+  server-url: http://{{ include "krateo-sse-proxy.fullname" . }}.{{ .Release.Namespace }}.svc:{{ .Values.service.port }}
+  insecure: "true"
