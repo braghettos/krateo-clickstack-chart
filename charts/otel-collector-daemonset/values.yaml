@@ -118,8 +118,12 @@ opentelemetry-collector:
           receivers: [filelog]
           processors: [memory_limiter, k8sattributes, transform, batch]
           exporters: [clickhouse]
+        # KOS-1 #112 bug #2: wire OTLP metrics -> ClickHouse. The reconcile RED suite
+        # (unstructured_runtime.reconcile.*) + the kagent GenAI token metrics arrive as OTLP on the
+        # node-local agent's otlp receiver (same one the traces pipeline below uses); without it in
+        # this pipeline they had no consumer and never reached otel_metrics_*.
         metrics:
-          receivers: [hostmetrics, kubeletstats]
+          receivers: [hostmetrics, kubeletstats, otlp]
           processors: [memory_limiter, k8sattributes, batch]
           exporters: [clickhouse]
         # KOS-1 #112 bug #1: wire OTLP traces -> ClickHouse. Apps/agents send OTLP spans to the
