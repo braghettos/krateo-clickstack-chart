@@ -137,7 +137,8 @@ config:
       logs_table_name: otel_logs
       traces_table_name: otel_traces
       metrics_table_name: otel_metrics
-      create_schema: false
+      # create_schema:true — this agent owns otel_traces creation (KOS-1 #112 bug #1).
+      create_schema: true
       timeout: 10s
       retry_on_failure:
         enabled: true
@@ -153,6 +154,11 @@ config:
         exporters: [clickhouse]
       metrics:
         receivers: [hostmetrics, kubeletstats]
+        processors: [memory_limiter, k8sattributes, batch]
+        exporters: [clickhouse]
+      # KOS-1 #112 bug #1: OTLP traces -> ClickHouse (creates + populates otel_traces).
+      traces:
+        receivers: [otlp]
         processors: [memory_limiter, k8sattributes, batch]
         exporters: [clickhouse]
 

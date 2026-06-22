@@ -100,7 +100,11 @@ opentelemetry-collector:
         logs_table_name: otel_logs
         traces_table_name: otel_traces
         metrics_table_name: otel_metrics
-        create_schema: false
+        # create_schema:true so this node-local agent owns otel_traces creation (idempotent
+        # CREATE IF NOT EXISTS; otel_logs/otel_metrics already exist). Required by the traces
+        # pipeline below — the gateway has create_schema:true but no traces pipeline, so
+        # without this nothing ever creates otel_traces. KOS-1 #112 bug #1.
+        create_schema: true
         timeout: 10s
         retry_on_failure:
           enabled: true
@@ -116,6 +120,15 @@ opentelemetry-collector:
           exporters: [clickhouse]
         metrics:
           receivers: [hostmetrics, kubeletstats]
+          processors: [memory_limiter, k8sattributes, batch]
+          exporters: [clickhouse]
+        # KOS-1 #112 bug #1: wire OTLP traces -> ClickHouse. Apps/agents send OTLP spans to the
+        # node-local agent (status.hostIP:4317 grpc / :4318 http, from chart-default otlp receiver);
+        # previously the traces pipeline exported to debug only (chart default) so nothing landed
+        # and otel_traces was never created. jaeger/zipkin receiver defaults stay defined-but-unused
+        # (the collector ignores unreferenced receivers), so no need to null them.
+        traces:
+          receivers: [otlp]
           processors: [memory_limiter, k8sattributes, batch]
           exporters: [clickhouse]
 
