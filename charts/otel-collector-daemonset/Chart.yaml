@@ -2,10 +2,10 @@ apiVersion: v2
 name: otel-collector-daemonset
 description: >-
   Node-level OpenTelemetry collector (daemonset mode) for Krateo. Wraps the
-  upstream opentelemetry-collector chart to collect pod logs, host metrics and
-  kubelet metrics and export them to ClickHouse.
+  upstream opentelemetry-collector chart to collect pod logs, host metrics,
+  kubelet metrics and OTLP traces and export them to ClickHouse.
 type: application
-version: 0.1.1
+version: 0.1.2
 appVersion: "0.1.0"
 dependencies:
   - name: opentelemetry-collector
