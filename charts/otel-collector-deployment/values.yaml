@@ -9,7 +9,8 @@ opentelemetry-collector:
     # Renamed otelcol-krateo -> krateo-otel-collector when the custom collector was split
     # into its own single-image repo (braghettos/krateo-otel-collector) on the canonical CI.
     repository: ghcr.io/braghettos/krateo-otel-collector
-    tag: "1.0.0"
+    # 1.0.1: patched k8sobjectsreceiver (recycle timer + restart-on-close) — KOS-1 #112 bug #2
+    tag: "1.0.1"
     pullPolicy: IfNotPresent
 
   # The container binary is still named otelcol-krateo (OTel builder dist.name / Dockerfile
