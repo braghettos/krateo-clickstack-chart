@@ -1,5 +1,37 @@
 global: {}
 
+# Prometheus -> OTLP bridge gate (KOS-1: Prometheus-only /metrics -> ClickHouse).
+# Several components expose metrics ONLY as Prometheus /metrics scrape endpoints
+# (NOT OTLP), so they never reach the ClickHouse otel_metrics_* tables. The
+# `prometheus` receiver below (opentelemetry-collector.config.receivers.prometheus)
+# scrapes them via kubernetes_sd_configs (pod role) and feeds the existing metrics
+# pipeline -> clickhouse exporter.
+#
+# DEFAULT-OFF / ADDITIVE: with `enabled: false` the prometheus receiver is defined
+# but is NOT wired into the metrics pipeline (the upstream collector ignores any
+# receiver that no pipeline references, exactly as it already does for the unused
+# jaeger/zipkin defaults), so a default install is byte-unchanged and performs no
+# scraping. To enable the bridge, set `enabled: true` AND add `prometheus` to
+# opentelemetry-collector.config.service.pipelines.metrics.receivers (see comments
+# there). The flag is the single documented switch for the bridge.
+#
+# TARGET COMPONENTS must actually expose a Prometheus /metrics endpoint and carry
+# the standard scrape annotations for the pod-SD job to find them:
+#   prometheus.io/scrape: "true"
+#   prometheus.io/port:   "<metrics-port>"   (e.g. 8080 / 8085 / 9363)
+#   prometheus.io/path:   "/metrics"          (optional; defaults to /metrics)
+# Component-side dependency (these are OTLP-less today):
+#   - kagent-tools                     -> :8085  /metrics
+#   - ClickHouse server internal       -> :9363  /metrics (prometheus port enabled)
+#   - controller-runtime controllers   -> :8080  /metrics; the kagent controller
+#     needs --metrics-bind-address set (and the runtime controllers need their
+#     metrics port enabled) before the scrape yields any data.
+# (The engine reconcile-throughput suite already has an OTLP path via
+# provider-/unstructured-runtime; its Prometheus families are a legacy duplicate.)
+collector:
+  prometheusScrape:
+    enabled: false
+
 opentelemetry-collector:
   mode: deployment
 
@@ -62,8 +94,54 @@ opentelemetry-collector:
     receivers:
       jaeger: null
       otlp: null
-      prometheus: null
       zipkin: null
+      # Prometheus -> OTLP bridge receiver (gated by collector.prometheusScrape.enabled;
+      # see the top-of-file comment). Defined here but INERT until added to the metrics
+      # pipeline below, so a default install does no scraping. Discovers pods via the
+      # Kubernetes API (pod role) and scrapes only those carrying prometheus.io/scrape:
+      # "true", honouring the standard prometheus.io/port and prometheus.io/path
+      # annotations. Scraped samples flow through the metrics pipeline to the existing
+      # clickhouse exporter -> otel_metrics_* tables.
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: krateo-pod-annotations
+              scrape_interval: 60s
+              kubernetes_sd_configs:
+                - role: pod
+              relabel_configs:
+                # Keep only pods annotated prometheus.io/scrape: "true".
+                - source_labels:
+                    - __meta_kubernetes_pod_annotation_prometheus_io_scrape
+                  action: keep
+                  regex: "true"
+                # Honour prometheus.io/path (default /metrics).
+                - source_labels:
+                    - __meta_kubernetes_pod_annotation_prometheus_io_path
+                  action: replace
+                  target_label: __metrics_path__
+                  regex: (.+)
+                # Honour prometheus.io/port: rewrite the scrape address host:port.
+                - source_labels:
+                    - __address__
+                    - __meta_kubernetes_pod_annotation_prometheus_io_port
+                  action: replace
+                  regex: ([^:]+)(?::\d+)?;(\d+)
+                  replacement: $$1:$$2
+                  target_label: __address__
+                # Surface namespace / pod / node as labels for downstream attribution.
+                - source_labels:
+                    - __meta_kubernetes_namespace
+                  action: replace
+                  target_label: k8s_namespace_name
+                - source_labels:
+                    - __meta_kubernetes_pod_name
+                  action: replace
+                  target_label: k8s_pod_name
+                - source_labels:
+                    - __meta_kubernetes_pod_node_name
+                  action: replace
+                  target_label: k8s_node_name
       k8sobjects:
         objects:
           - name: events
@@ -143,6 +221,11 @@ opentelemetry-collector:
           receivers: [k8sobjects]
           processors: [memory_limiter, k8sattributes, resource, compositionresolver, batch]
           exporters: [clickhouse]
+        # To enable the Prometheus -> OTLP bridge (collector.prometheusScrape.enabled),
+        # add `prometheus` to the receivers list below, i.e.:
+        #   receivers: [k8s_cluster, prometheus]
+        # The prometheus receiver is defined under config.receivers but stays inert
+        # while it is absent from this list, keeping the default install unchanged.
         metrics:
           receivers: [k8s_cluster]
           processors: [memory_limiter, batch]

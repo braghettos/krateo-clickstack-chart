@@ -9,6 +9,23 @@
       "additionalProperties": true,
       "description": "Global values shared across charts."
     },
+    "collector": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Krateo collector-level toggles layered on the upstream subchart.",
+      "properties": {
+        "prometheusScrape": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Prometheus -> OTLP bridge gate. When enabled (and the prometheus receiver is wired into the metrics pipeline) the deployment collector scrapes Prometheus-only /metrics endpoints and exports them to the ClickHouse otel_metrics_* tables. Default-off and additive.",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
     "opentelemetry-collector": {
       "type": "object",
       "additionalProperties": true,
