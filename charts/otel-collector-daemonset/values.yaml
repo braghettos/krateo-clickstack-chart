@@ -3,6 +3,16 @@ global: {}
 opentelemetry-collector:
   mode: daemonset
 
+  # Headless Service exposing the node-local agent's OTLP receiver at a stable in-cluster DNS name
+  # (otel-collector-daemonset-opentelemetry-collector.<ns>.svc:4317 grpc / :4318 http) so the engine,
+  # cdc controllers and app components can export OTLP -> ClickHouse without needing per-node
+  # status.hostIP (the core-provider otel.endpoint is a literal string, not a downward-API ref).
+  # clusterIP: None keeps it headless -> consumes no Service-CIDR address.
+  service:
+    enabled: true
+    type: ClusterIP
+    clusterIP: None
+
   image:
     repository: otel/opentelemetry-collector-contrib
 
