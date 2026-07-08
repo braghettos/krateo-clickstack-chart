@@ -187,10 +187,7 @@ clickstack:
           persistentVolumeClaimRetentionPolicy:
             whenDeleted: Delete
             whenScaled: Retain
-
-# Orphaned-PVC reaper (#93): a post-delete hook Job that deletes the ClickHouse/Keeper
-# StatefulSet PVCs (clickhouse-storage-volume-*) the operator leaves behind on teardown
-# (it sets no ownerReference / retention policy on them). Runs in this release's namespace.
-pvcReaper:
-  enabled: true
-  image: registry.k8s.io/kubectl:v1.31.4
+# NOTE (#93): the ClickHouse/Keeper orphaned-PVC reaper is NOT a chart hook — a composition-chart
+# post-delete hook doesn't run reliably (cdc uninstall) and would race the operator's async STS
+# teardown. It lives in the installer's ordered-teardown pre-delete path instead (installer >= 0.2.191).
+# Only MongoDB's PVC retention (above) is chart-level, because its operator passes spec.statefulSet through.

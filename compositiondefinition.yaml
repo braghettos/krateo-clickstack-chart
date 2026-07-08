@@ -9,4 +9,4 @@ metadata:
 spec:
   chart:
     url: oci://ghcr.io/braghettos/krateo/krateo-observability
-    version: "0.1.7"
+    version: "0.1.8"
