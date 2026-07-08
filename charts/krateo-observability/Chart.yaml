@@ -17,7 +17,7 @@ type: application
 # The mount was never applied (upstream renders only cluster.spec; the clickhouse.com CRD has no
 # extraVolumes field; subPath into config.d/ also crashloops on kind) so /events 404'd and the only
 # path that worked was the forbidden raw native-SQL/dynamic-query API. New version forces the re-pull.
-version: 0.1.6
+version: 0.1.7
 appVersion: "3.0.0"
 dependencies:
   - name: clickstack

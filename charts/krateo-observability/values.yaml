@@ -177,3 +177,20 @@ clickstack:
     enabled: true
     persistence:
       size: 10Gi
+    # #93: reap the MongoDB PVCs (data + logs) on teardown. The mongodb-community operator
+    # passes spec.statefulSet.spec through to its StatefulSet (x-kubernetes-preserve-unknown-fields),
+    # so we can set the GA StatefulSet PVC retention policy directly (unlike the ClickHouse operator,
+    # which exposes no such field — hence the pvcReaper hook below for CH/Keeper).
+    spec:
+      statefulSet:
+        spec:
+          persistentVolumeClaimRetentionPolicy:
+            whenDeleted: Delete
+            whenScaled: Retain
+
+# Orphaned-PVC reaper (#93): a post-delete hook Job that deletes the ClickHouse/Keeper
+# StatefulSet PVCs (clickhouse-storage-volume-*) the operator leaves behind on teardown
+# (it sets no ownerReference / retention policy on them). Runs in this release's namespace.
+pvcReaper:
+  enabled: true
+  image: registry.k8s.io/kubectl:v1.31.4

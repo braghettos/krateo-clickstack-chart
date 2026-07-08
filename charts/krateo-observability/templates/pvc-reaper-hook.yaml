@@ -1,0 +1,93 @@
+{{- if .Values.pvcReaper.enabled }}
+# =============================================================================
+# ClickHouse/Keeper orphaned-PVC reaper (#93 Part B).
+#
+# The clickhouse.com operator (ClickHouseCluster/KeeperCluster, v0.0.5) turns
+# spec.dataVolumeClaimSpec into a StatefulSet volumeClaimTemplate named
+# "clickhouse-storage-volume" for BOTH ClickHouse and Keeper. StatefulSet-created
+# PVCs are RETAINED on delete and the operator sets NO ownerReference on them, so
+# deleting the CR (helm uninstall) leaves them orphaned. The operator exposes no
+# persistentVolumeClaimRetentionPolicy / StatefulSet passthrough and no newer
+# release adds one, so the PVCs must be reaped by the teardown path.
+#
+# Runs as a POST-delete hook: helm uninstall deletes the ClickHouseCluster /
+# KeeperCluster CRs first, the operator tears down their StatefulSets, and THEN
+# this hook deletes the leftover PVCs. Scoped to this release's namespace
+# (krateo-system) and matched by the reserved volume-name prefix
+# "clickhouse-storage-volume-" (covers CH + Keeper + JBOD additional disks).
+# =============================================================================
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: krateo-clickstack-pvc-reaper
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": post-delete
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: krateo-clickstack-pvc-reaper
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": post-delete
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+rules:
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: krateo-clickstack-pvc-reaper
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": post-delete
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: krateo-clickstack-pvc-reaper
+subjects:
+  - kind: ServiceAccount
+    name: krateo-clickstack-pvc-reaper
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: krateo-clickstack-pvc-reaper
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": post-delete
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 120
+  template:
+    metadata:
+      name: krateo-clickstack-pvc-reaper
+    spec:
+      restartPolicy: Never
+      serviceAccountName: krateo-clickstack-pvc-reaper
+      containers:
+        - name: reaper
+          image: {{ .Values.pvcReaper.image }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              NS="{{ .Release.Namespace }}"
+              echo "Reaping orphaned ClickHouse/Keeper PVCs in ${NS} (prefix clickhouse-storage-volume-)"
+              kubectl -n "${NS}" get pvc -o name \
+                | grep '/clickhouse-storage-volume-' \
+                | xargs -r kubectl -n "${NS}" delete --wait=false || true
+              echo "Reaper done."
+{{- end }}
