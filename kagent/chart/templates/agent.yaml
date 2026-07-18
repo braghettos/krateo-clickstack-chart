@@ -9,7 +9,11 @@ metadata:
 spec:
   type: Declarative
   description: >-
-    The Krateo observability expert: troubleshoots Krateo/K8s issues by querying the ClickStack telemetry backend (ClickHouse+OTel+HyperDX). Grounds in braghettos/krateo-clickstack-chart (deployment/CRDs/wiring) and braghettos/krateo-otel-collector (internals) at the deployed version.
+    A read-only Krateo/Kubernetes observability troubleshooter that diagnoses issues by querying the
+    ClickStack telemetry backend (ClickHouse + OTel collectors + HyperDX) — running SELECT queries over the
+    otel_logs and otel_metrics_gauge/sum/histogram tables and inspecting live cluster state via k8s reads —
+    grounded in braghettos/krateo-clickstack-chart (deployment/CRDs/wiring) and braghettos/krateo-otel-collector
+    (internals) at the deployed chart tag.
   declarative:
     deployment:
       env:
@@ -66,11 +70,25 @@ spec:
       skills:
         - id: troubleshoot-telemetry
           name: Troubleshoot via telemetry
-          description: Diagnose Krateo/K8s issues by querying ClickStack telemetry (pod logs, events, metrics, error spikes, restarts, OOMKills).
-          tags: [krateo, observability, clickhouse, telemetry]
+          description: >-
+            Diagnose Krateo/K8s issues by querying ClickStack telemetry in ClickHouse — pod logs, K8s Events,
+            error spikes, crash-loops, restarts, and OOMKills.
+          tags: [krateo, observability, clickhouse, otel, telemetry, troubleshooting]
           examples:
             - Why is this pod crash-looping? Check the telemetry.
-            - Investigate the recent error spike for the frontend.
+            - Investigate the recent ERROR/FATAL spike for the frontend pods in the last hour.
+            - Which pods got OOMKilled or restarted in krateo-system today?
+            - Show me the Warning K8s Events from otel_logs for this namespace.
+        - id: correlate-metrics-events
+          name: Correlate metrics, logs and events
+          description: >-
+            Correlate otel_logs, K8s Events, and CPU/memory metrics across namespaces, pods, and
+            compositions to build a full picture and suggest next steps.
+          tags: [metrics, clickhouse, kubernetes, compositions, correlation]
+          examples:
+            - What are the top memory consumers in krateo-system right now?
+            - Correlate the logs, events, and CPU/memory for a composition id and tell me what went wrong.
+            - Cross-reference the restart spike with the pod logs and K8s events for this deployment.
     deployment:
       resources:
 {{- toYaml .Values.resources | nindent 8 }}
