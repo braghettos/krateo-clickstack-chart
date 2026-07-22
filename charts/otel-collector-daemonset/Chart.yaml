@@ -5,7 +5,9 @@ description: >-
   upstream opentelemetry-collector chart to collect pod logs, host metrics,
   kubelet metrics and OTLP traces and export them to ClickHouse.
 type: application
-version: 0.1.4
+# 0.1.5: clickhouse exporter ttl: 168h — 7-day retention stamped into freshly created otel_*
+# tables (retention incident: 10Gi filled in 8 days → insert code 243 → collector OOM loop).
+version: 0.1.5
 appVersion: "0.1.0"
 dependencies:
   - name: opentelemetry-collector
