@@ -211,6 +211,17 @@ opentelemetry-collector:
         traces_table_name: otel_traces
         metrics_table_name: otel_metrics
         create_schema: true
+        # RETENTION — DO NOT REMOVE. Incident 2026-07: with no TTL the otel_* tables grew
+        # unbounded and filled the 10Gi ClickHouse volume in 8 days → every insert failed
+        # with code 243 (NOT_ENOUGH_SPACE) → the collectors buffered and OOM-crash-looped →
+        # telemetry dead. ttl: 168h stamps a native 7-day TTL into the CREATE TABLE the
+        # exporter issues, so FRESH installs are bounded from day one. NOTE: create_schema
+        # is CREATE ... IF NOT EXISTS — this ttl only applies at table CREATION; tables that
+        # already exist (e.g. the live bench) were fixed with a live
+        # `ALTER TABLE ... MODIFY TTL` (7 days) and are untouched by this setting.
+        # Disk-size sibling fixes: krateo-observability 0.1.9 (15Gi volume + 3-day
+        # system-log ttl via cluster.spec.settings.extraConfig).
+        ttl: 168h
         timeout: 10s
         retry_on_failure:
           enabled: true
