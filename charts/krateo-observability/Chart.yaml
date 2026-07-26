@@ -27,7 +27,10 @@ type: application
 # /api/v2/external/{alerts,webhooks,dashboards,sources} authenticated via Bearer user.accessKey
 # (validateUserAccessKey middleware) — this unlocks replacing the session-cookie reconciler in
 # krateo-alert-troubleshooter with native Composition + RESTDefinitions.
-version: 0.1.10
+# 0.1.11: add krateo-clickstack-api ClusterIP Service (port 8000) so in-cluster clients can reach
+# the HyperDX Express backend directly (bypass the Next.js /api-stripping proxy at port 3000).
+# Required for Composition RESTDefinitions using Bearer auth against /api/v2/*.
+version: 0.1.11
 appVersion: "3.0.2"
 dependencies:
   - name: clickstack
