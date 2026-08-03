@@ -18,9 +18,10 @@ vertexAI:
   enabled: true
   projectID: ""
   location: us-central1
-# Tokenless fetch MCP (kagent MCPServer, fetch-mcp-server) — GETs the version-pinned public raw
-# docs/llms.txt URL (no token/auth). This is the default grounding path; the chart stamps the
-# deployed tag into the URL in the prompt footer.
+repoSearch:
+  enabled: true
+  mcpServer: krateo-repo-mcp-server
+
 fetch:
   enabled: true
   mcpServer: fetch-mcp-server
