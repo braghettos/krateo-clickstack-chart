@@ -7,7 +7,13 @@
     "global": {
       "type": "object",
       "additionalProperties": true,
-      "description": "Global values shared across charts."
+      "description": "Global values shared across charts.",
+      "properties": {
+        "imageRegistry": {
+          "type": "string",
+          "description": "Optional registry host override applied to every image (repository paths preserved)."
+        }
+      }
     },
     "replicaCount": {
       "type": "integer",
@@ -17,6 +23,9 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "registry": {
+          "type": "string"
+        },
         "repository": {
           "type": "string"
         },
