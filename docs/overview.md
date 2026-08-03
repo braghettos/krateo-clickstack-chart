@@ -3,7 +3,7 @@
 What the Krateo **ClickStack observability blueprint** is, and **how it deploys** as a set of Krateo
 compositions. This is the deployment view; the internals/runtime view (the custom OTel collector, the
 `compositionresolver` processor, the sse-proxy binary) lives in the code repo
-`braghettos/krateo-otel-collector` (`docs/`). Every claim below is traced to a file in this repo — if a
+`krateo-platformops/otel-collector` (`docs/`). Every claim below is traced to a file in this repo — if a
 comment disagrees with what the chart actually renders, the rendered chart wins.
 
 ## What clickstack is
@@ -18,7 +18,7 @@ it through HyperDX, and feeds two consumers:
 - the **`krateo-clickstack-agent`** (this repo's `kagent/chart`), which troubleshoots Krateo/K8s
   issues by querying the same ClickHouse tables.
 
-This repo is the **braghettos packaging as a Krateo blueprint**: it wraps the upstream ClickStack
+This repo is the **krateo-platformops packaging as a Krateo blueprint**: it wraps the upstream ClickStack
 Helm chart and the upstream OpenTelemetry collector chart, folds in the Krateo-specific glue, and
 ships a `values.schema.json` so `core-provider` can generate a typed CompositionDefinition CRD. It
 replaces the old imperative `obs-stack` `install.sh` phases (no hand-run `kubectl patch`,
@@ -28,11 +28,11 @@ replaces the old imperative `obs-stack` `install.sh` phases (no hand-run `kubect
 
 | Path | Chart name | OCI artifact | Versioning |
 |------|------------|--------------|------------|
-| `charts/krateo-observability` | `krateo-observability` | `oci://ghcr.io/braghettos/krateo/krateo-observability` | tracks the git tag (`Chart.yaml` `version: CHART_VERSION`); current literal `0.1.5`, `appVersion 3.0.0` |
-| `charts/otel-collector-deployment` | `otel-collector-deployment` | `oci://ghcr.io/braghettos/krateo/otel-collector-deployment` | pinned `0.2.0`, independent |
-| `charts/otel-collector-daemonset` | `otel-collector-daemonset` | `oci://ghcr.io/braghettos/krateo/otel-collector-daemonset` | pinned `0.1.1`, independent |
-| `charts/krateo-sse-proxy` | `krateo-sse-proxy` | `oci://ghcr.io/braghettos/krateo/krateo-sse-proxy` | pinned `0.1.3`, independent |
-| `kagent/chart` | `krateo-clickstack-agent` | `oci://ghcr.io/braghettos/krateo/krateo-clickstack-agent` | `0.1.x`, independent (`kagent/chart/Chart.yaml`) |
+| `charts/krateo-observability` | `krateo-observability` | `oci://ghcr.io/krateo-platformops/charts/observability` | tracks the git tag (`Chart.yaml` `version: CHART_VERSION`); current literal `0.1.5`, `appVersion 3.0.0` |
+| `charts/otel-collector-deployment` | `otel-collector-deployment` | `oci://ghcr.io/krateo-platformops/charts/otel-collector-deployment` | pinned `0.2.0`, independent |
+| `charts/otel-collector-daemonset` | `otel-collector-daemonset` | `oci://ghcr.io/krateo-platformops/charts/otel-collector-daemonset` | pinned `0.1.1`, independent |
+| `charts/krateo-sse-proxy` | `krateo-sse-proxy` | `oci://ghcr.io/krateo-platformops/charts/sse-proxy` | pinned `0.1.3`, independent |
+| `kagent/chart` | `krateo-clickstack-agent` | `oci://ghcr.io/krateo-platformops/charts/clickstack-agent` | `0.1.x`, independent (`kagent/chart/Chart.yaml`) |
 
 They version **independently**:
 
@@ -50,7 +50,7 @@ They version **independently**:
   wrapper. The deployment-mode one runs the custom `krateo-otel-collector` image (the
   `compositionresolver` processor); the daemonset-mode one runs node-level log/metric collection.
 - **The SSE proxy** (`krateo-sse-proxy`) is a small Krateo-built Go service (image
-  `ghcr.io/braghettos/krateo-sse-proxy`); pinned `0.1.3`, single replica by design (it is a stateful
+  `ghcr.io/krateo-platformops/sse-proxy`); pinned `0.1.3`, single replica by design (it is a stateful
   in-memory SSE hub — see [wiring.md](wiring.md)).
 - **The agent chart** (`kagent/chart`) is the federated specialist agent (`krateo-clickstack-agent`)
   registered on `krateo-autopilot`; it versions on its own `0.1.x` line and is **not** any
@@ -61,8 +61,8 @@ They version **independently**:
 
 The repo-root `compositiondefinition.yaml` registers the wrapper with Krateo: `core.krateo.io/v1alpha1`,
 name `krateo-observability`, namespace `krateo-system`, `spec.chart.url` =
-`oci://ghcr.io/braghettos/krateo/krateo-observability`, `spec.chart.version` pinned (currently `"0.1.2"`
-in this file). In a real install the [krateo-installer](https://github.com/braghettos/krateo-installer)
+`oci://ghcr.io/krateo-platformops/charts/observability`, `spec.chart.version` pinned (currently `"0.1.2"`
+in this file). In a real install the [krateo-installer](https://github.com/krateo-platformops/installer)
 umbrella owns this and the per-collector CompositionDefinitions (`README.md`). `core-provider` reads
 the wrapper chart's `values.schema.json`, generates the typed `KrateoObservability` CRD, and reconciles
 one Composition per instance. The deployed chart version is cluster-observable from
@@ -125,9 +125,9 @@ For the full per-chart `values.yaml` surface, the installer wiring, and the oper
 
 ## Cross-references
 
-- **Code repo (internals & runtime):** `braghettos/krateo-otel-collector` —
-  [`docs/llms.txt`](https://github.com/braghettos/krateo-otel-collector/blob/main/docs/llms.txt). That set
+- **Code repo (internals & runtime):** `krateo-platformops/otel-collector` —
+  [`docs/llms.txt`](https://github.com/krateo-platformops/otel-collector/blob/main/docs/llms.txt). That set
   is versioned at the **image** tag (the collector/sse-proxy image tags); this set is versioned at the
   **chart** tag.
-- **Installer umbrella:** `braghettos/krateo-installer` (owns the CompositionDefinitions).
+- **Installer umbrella:** `krateo-platformops/installer` (owns the CompositionDefinitions).
 - **Upstream:** `ClickHouse/ClickStack-helm-charts`, `open-telemetry/opentelemetry-helm-charts`.

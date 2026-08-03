@@ -11,7 +11,7 @@ global: {}
 replicaCount: 1
 
 image:
-  repository: ghcr.io/braghettos/krateo-sse-proxy
+  repository: ghcr.io/krateo-platformops/sse-proxy
   tag: "1.1.2"
   pullPolicy: IfNotPresent
 

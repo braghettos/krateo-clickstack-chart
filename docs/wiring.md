@@ -51,7 +51,7 @@ The heavy upstream values live under `clickstack:` and are passed through verbat
 
 All under `opentelemetry-collector:` (the upstream dep):
 
-- `mode: deployment`, `replicaCount: 1`, image `ghcr.io/braghettos/krateo-otel-collector:1.0.0`,
+- `mode: deployment`, `replicaCount: 1`, image `ghcr.io/krateo-platformops/otel-collector:1.0.0`,
   `command.name: otelcol-krateo` (image repo renamed; binary name unchanged).
 - `clusterRole.create: true` with read rules on core/apps/batch/autoscaling K8s resources plus `get`
   on the Krateo CR groups (`composition.krateo.io`, `templates.krateo.io`,
@@ -82,7 +82,7 @@ kubelet metrics → ClickHouse.
   users on `/notifications` — exactly what broke the portal bell. A single hub eliminates the split;
   the poller resumes from `lastSeenUnix` on restart. (To scale >1: gate readiness on poller health +
   add `sessionAffinity`, or move to a shared event store.)
-- `image: ghcr.io/braghettos/krateo-sse-proxy:1.0.0`; `service.type: ClusterIP`, `service.port: 8080`;
+- `image: ghcr.io/krateo-platformops/sse-proxy:1.0.0`; `service.type: ClusterIP`, `service.port: 8080`;
   container port 8080, `/health` liveness+readiness.
 - `clickhouse.url: http://krateo-clickstack-clickhouse-clickhouse-headless.krateo-system.svc:8123`,
   `clickhouse.user: default`, password from the `clickhouse-credentials` Secret
@@ -105,7 +105,7 @@ kubelet metrics → ClickHouse.
 
 ## How the installer wires it
 
-The [krateo-installer](https://github.com/braghettos/krateo-installer) umbrella owns the
+The [krateo-installer](https://github.com/krateo-platformops/installer) umbrella owns the
 CompositionDefinitions for the wrapper and the collectors (`README.md`). It pins each
 `spec.chart.version` to a released chart tag and points `core-provider` at the OCI artifacts;
 `core-provider` reads `charts/krateo-observability/values.schema.json`, generates the `KrateoObservability`
@@ -138,6 +138,6 @@ can reach it. The deployed chart version is readable from `CompositionDefinition
 
 - [overview.md](overview.md) — chart layout, the CompositionDefinitions, what gets deployed.
 - [crds.md](crds.md) — why this component owns no hand-authored CRD; the generated composition type.
-- Code repo runtime view: `braghettos/krateo-otel-collector`
-  [`docs/llms.txt`](https://github.com/braghettos/krateo-otel-collector/blob/main/docs/llms.txt)
+- Code repo runtime view: `krateo-platformops/otel-collector`
+  [`docs/llms.txt`](https://github.com/krateo-platformops/otel-collector/blob/main/docs/llms.txt)
   (the custom OTel collector, the `compositionresolver` processor, the sse-proxy poller/hub).

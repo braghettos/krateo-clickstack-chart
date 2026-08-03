@@ -14,5 +14,5 @@ keywords:
   - sse
   - observability
 sources:
-  - https://github.com/braghettos/krateo-clickstack-chart
-  - https://github.com/braghettos/krateo-sse-proxy
+  - https://github.com/krateo-platformops/clickstack-chart
+  - https://github.com/krateo-platformops/sse-proxy

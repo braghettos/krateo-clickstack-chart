@@ -8,5 +8,5 @@ metadata:
   namespace: krateo-system
 spec:
   chart:
-    url: oci://ghcr.io/braghettos/krateo/krateo-observability
+    url: oci://ghcr.io/krateo-platformops/charts/observability
     version: "0.1.8"

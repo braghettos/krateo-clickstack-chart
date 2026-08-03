@@ -50,4 +50,4 @@ annotations:
   krateo.io/maturity: beta
   krateoSupportedVersion: ">= 2.5.1"
 sources:
-  - https://github.com/braghettos/krateo-clickstack-chart
+  - https://github.com/krateo-platformops/clickstack-chart
