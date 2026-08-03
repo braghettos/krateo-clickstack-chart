@@ -46,8 +46,21 @@ spec:
             - k8s_get_resources
             - k8s_get_pod_logs
             - k8s_get_events
+{{- if .Values.repoSearch.enabled }}
+      - type: McpServer
+        mcpServer:
+          name: {{ .Values.repoSearch.mcpServer }}
+          kind: RemoteMCPServer
+          apiGroup: kagent.dev
+          toolNames:
+            - get_deployed_versions
+            - list_krateo_repos
+            - list_krateo_blueprints
+            - list_repo_files
+            - search_repo
+            - read_repo_file
+{{- end }}
 {{- if .Values.fetch.enabled }}
-      # Tokenless doc grounding: GET the version-pinned raw docs/llms.txt URL (public, no auth/token).
       - type: McpServer
         mcpServer:
           name: {{ .Values.fetch.mcpServer }}
