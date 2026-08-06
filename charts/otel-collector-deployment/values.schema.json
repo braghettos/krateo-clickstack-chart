@@ -515,6 +515,48 @@
               }
             }
           }
+        },
+        "livenessProbe": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "initialDelaySeconds": {
+              "type": "integer"
+            },
+            "periodSeconds": {
+              "type": "integer"
+            },
+            "timeoutSeconds": {
+              "type": "integer"
+            },
+            "failureThreshold": {
+              "type": "integer"
+            },
+            "terminationGracePeriodSeconds": {
+              "type": "integer"
+            }
+          }
+        },
+        "readinessProbe": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "initialDelaySeconds": {
+              "type": "integer"
+            },
+            "periodSeconds": {
+              "type": "integer"
+            },
+            "timeoutSeconds": {
+              "type": "integer"
+            },
+            "successThreshold": {
+              "type": "integer"
+            },
+            "failureThreshold": {
+              "type": "integer"
+            }
+          }
         }
       },
       "description": "Values forwarded to the upstream opentelemetry-collector subchart."
