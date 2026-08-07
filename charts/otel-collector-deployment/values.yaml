@@ -263,3 +263,18 @@ opentelemetry-collector:
     requests:
       cpu: 100m
       memory: 256Mi
+
+  # Probe tolerances, passed through to the upstream opentelemetry-collector chart's
+  # templates/_pod.tpl (org standard). The Kubernetes defaults (timeoutSeconds: 1,
+  # failureThreshold: 3) kill HEALTHY pods under CPU contention — a slow-but-alive
+  # health reply counts as a failure and the resulting restart storm worsens the
+  # contention. Liveness is lenient so only a truly dead process dies: implicit
+  # periodSeconds default 10 x 6 failures = 60s of continuous failure before restart.
+  livenessProbe:
+    timeoutSeconds: 5
+    failureThreshold: 6
+  # Readiness keeps prompt endpoint removal (failureThreshold: 3, implicit 10s period)
+  # but timeoutSeconds: 5 keeps load alone from flapping the endpoint in and out.
+  readinessProbe:
+    timeoutSeconds: 5
+    failureThreshold: 3
